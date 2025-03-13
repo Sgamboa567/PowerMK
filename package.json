@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -22,12 +22,13 @@
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
-    "react-pdf": "^5.0.0"
+    "react-pdf": "^5.0.0",
+    "@prisma/client": "^5.10.0"
   },
   "devDependencies": {
     "typescript": "^4.0.0",
     "eslint": "^7.0.0",
     "eslint-config-next": "^12.0.0",
-    "prisma": "^3.0.0"
+    "prisma": "^5.10.0"
   }
 }

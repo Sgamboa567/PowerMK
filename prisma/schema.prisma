@@ -1,52 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  document  String   @unique
-  password  String
-  role      String   // admin, consultant, client
+  id       String  @id @default(uuid())
+  document String  @unique
+  password String
+  role     String
+  name     String?
+  email    String?
+  phone    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Client {
-  id        Int      @id @default(autoincrement())
-  name      String
+  id        String   @id @default(uuid())
   document  String   @unique
-  email     String?
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Product {
-  id        Int      @id @default(autoincrement())
   name      String
-  sku       String   @unique
-  price     Float
-  imageUrl  String?
-  category  String
-  status    String   // active, discontinued
+  email     String?
+  phone     String
+  birthday  DateTime?
+  interest  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Sale {
-  id        Int      @id @default(autoincrement())
-  clientId  Int
-  consultantId Int
+  id        String   @id @default(uuid())
+  clientId  String
+  userId    String
   total     Float
+  status    String   @default("pending")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  client    Client   @relation(fields: [clientId], references: [id])
-  consultant User     @relation(fields: [consultantId], references: [id])
-}
-
-model Inventory {
-  id        Int      @id @default(autoincrement())
-  productId Int
-  stock     Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  product   Product   @relation(fields: [productId], references: [id])
 }
