@@ -1,0 +1,57 @@
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+
+const Ventas = () => {
+  const [ventas, setVentas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVentas = async () => {
+      const { data, error } = await supabase
+        .from('sales')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching sales:', error);
+      } else {
+        setVentas(data);
+      }
+      setLoading(false);
+    };
+
+    fetchVentas();
+  }, []);
+
+  if (loading) {
+    return <div>Cargando ventas...</div>;
+  }
+
+  return (
+    <div>
+      <h1>Ventas Recientes</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ventas.map((venta) => (
+            <tr key={venta.id}>
+              <td>{venta.id}</td>
+              <td>{venta.cliente}</td>
+              <td>{new Date(venta.created_at).toLocaleDateString()}</td>
+              <td>${venta.monto.toFixed(2)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default Ventas;

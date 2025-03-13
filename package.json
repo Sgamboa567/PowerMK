@@ -1,0 +1,33 @@
+{
+  "name": "powermk",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@auth/core": "^0.18.0",
+    "@emotion/react": "^11.0.0",
+    "@emotion/styled": "^11.0.0",
+"@mui/icons-material": "^5.0.0",
+    "@mui/material": "^5.0.0",
+    "@sendgrid/mail": "^7.7.0",
+    "@supabase/supabase-js": "^2.0.0",
+    "chart.js": "^4.4.1",
+"next": "14.0.0",
+    "next-auth": "^4.24.5",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+"react-dom": "^18.2.0",
+    "react-pdf": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.0.0",
+    "eslint": "^7.0.0",
+    "eslint-config-next": "^12.0.0",
+    "prisma": "^3.0.0"
+  }
+}
