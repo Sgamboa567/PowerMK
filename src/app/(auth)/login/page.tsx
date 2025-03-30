@@ -1,18 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Box,
-  Button,
-  Card,
-  CardContent,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography
-} from '@mui/material';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  ToggleButtonGroup,
+  ToggleButton,
+  Alert,
+  Paper
+} from '@mui/material';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -26,22 +26,44 @@ export default function LoginPage() {
     setError('');
 
     if (userType === 'client') {
-      // Cliente solo necesita documento
       router.push(`/catalogo?document=${document}`);
       return;
     }
 
-    // Consultor/a necesita autenticación completa
-    const result = await signIn('credentials', {
-      document,
-      password,
-      redirect: false
-    });
+    try {
+      const result = await signIn('credentials', {
+        document,
+        password,
+        redirect: false,
+      });
 
-    if (result?.error) {
-      setError('Credenciales inválidas');
-    } else {
-      router.push('/dashboard');
+      if (result?.error) {
+        setError('Credenciales inválidas');
+        return;
+      }
+
+      // Obtener el rol del usuario
+      const response = await fetch('/api/user/role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ document }),
+      });
+
+      const { role } = await response.json();
+
+      // Redireccionar según el rol
+      if (role === 'admin') {
+        router.push('/admin');
+      } else if (role === 'consultant') {
+        router.push('/consultant');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      setError('Error al iniciar sesión');
+      console.error('Login error:', error);
     }
   };
 
@@ -55,62 +77,68 @@ export default function LoginPage() {
         bgcolor: 'background.default'
       }}
     >
-      <Card sx={{ maxWidth: 400, width: '100%', mx: 2 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" component="h1" gutterBottom align="center">
-            PowerMK
+      <Paper
+        elevation={3}
+        sx={{
+          p: 4,
+          maxWidth: 400,
+          width: '100%',
+        }}
+      >
+        <form onSubmit={handleSubmit}>
+          <Typography variant="h5" align="center" gutterBottom>
+            Iniciar Sesión
           </Typography>
-          
+
           <ToggleButtonGroup
+            color="primary"
             value={userType}
             exclusive
-            onChange={(_, value) => value && setUserType(value)}
+            onChange={(e, value) => value && setUserType(value)}
             fullWidth
-            sx={{ mb: 3 }}
+            sx={{ mb: 2 }}
           >
             <ToggleButton value="client">Cliente</ToggleButton>
-            <ToggleButton value="consultant">Consultor/a</ToggleButton>
+            <ToggleButton value="consultant">Consultora</ToggleButton>
           </ToggleButtonGroup>
 
-          <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Documento"
+            value={document}
+            onChange={(e) => setDocument(e.target.value)}
+            margin="normal"
+            required
+          />
+
+          {userType === 'consultant' && (
             <TextField
               fullWidth
-              label="Documento"
-              value={document}
-              onChange={(e) => setDocument(e.target.value)}
+              type="password"
+              label="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
             />
-            
-            {userType === 'consultant' && (
-              <TextField
-                fullWidth
-                type="password"
-                label="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
-                required
-              />
-            )}
+          )}
 
-            {error && (
-              <Typography color="error" variant="body2" sx={{ mt: 2 }}>
-                {error}
-              </Typography>
-            )}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3 }}
-            >
-              {userType === 'client' ? 'Continuar' : 'Iniciar Sesión'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+          >
+            {userType === 'client' ? 'Ver Catálogo' : 'Iniciar Sesión'}
+          </Button>
+        </form>
+      </Paper>
     </Box>
   );
 }

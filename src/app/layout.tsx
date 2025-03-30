@@ -1,13 +1,7 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
+'use client'
 
-const inter = Inter({ subsets: ['latin'] })
-
-export const metadata: Metadata = {
-  title: 'PowerMK',
-  description: 'Mary Kay Management System',
-}
+import { SessionProvider } from 'next-auth/react'
+import { ThemeProvider } from '@/components/ThemeProvider'
 
 export default function RootLayout({
   children,
@@ -16,7 +10,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body className={inter.className}>{children}</body>
+      <body>
+        <SessionProvider>
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
+        </SessionProvider>
+      </body>
     </html>
   )
 }
