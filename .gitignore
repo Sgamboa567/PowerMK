@@ -1,11 +1,11 @@
 # dependencies
-/node_modules
+node_modules
 
 # testing
 /coverage
 
 # next.js
-/.next/
+.next
 /out/
 
 # production
@@ -21,7 +21,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env*
 .env.local
 
 # vercel

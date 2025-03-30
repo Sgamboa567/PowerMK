@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "next lint"
   },
   "dependencies": {
     "@auth/core": "0.34.2",
@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.0.0",
     "@mui/icons-material": "^5.0.0",
     "@mui/material": "^5.0.0",
+    "@prisma/client": "^5.10.0",
     "@sendgrid/mail": "^7.7.0",
     "@supabase/supabase-js": "^2.0.0",
     "chart.js": "^4.4.1",
@@ -22,11 +23,10 @@
     "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
-    "react-pdf": "^5.0.0",
-    "@prisma/client": "^5.10.0"
+    "react-pdf": "^5.0.0"
   },
   "devDependencies": {
-    "typescript": "^4.0.0",
+    "typescript": "^5.1.0",
     "eslint": "^7.0.0",
     "eslint-config-next": "^12.0.0",
     "prisma": "^5.10.0"

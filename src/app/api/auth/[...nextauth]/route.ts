@@ -1,74 +1,72 @@
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { createClient } from '@supabase/supabase-js';
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import { supabase } from '@/utils/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        document: { label: "Documento", type: "text" },
-        password: { label: "Contraseña", type: "password" }
+        document: { label: "Document", type: "text" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.document || !credentials?.password) {
-          return null;
+          return null
         }
 
-        // Buscar usuario en Supabase
-        const { data: user, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('document', credentials.document)
-          .single();
+        try {
+          const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('document', credentials.document)
+            .single()
 
-        if (error || !user) {
-          return null;
+          if (error || !user) {
+            return null
+          }
+
+          // Aquí deberías verificar la contraseña correctamente
+          // Este es solo un ejemplo básico
+          if (user.password === credentials.password) {
+            return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              role: user.role,
+            }
+          }
+
+          return null
+        } catch (error) {
+          console.error('Auth error:', error)
+          return null
         }
-
-        // Verificar contraseña (usar bcrypt en producción)
-        const isValidPassword = user.password === credentials.password;
-
-        if (!isValidPassword) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          document: user.document,
-          role: user.role,
-        };
       }
-    }),
+    })
   ],
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   pages: {
     signIn: '/login',
+    error: '/login',
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role;
-        token.document = user.document;
+        token.role = user.role
       }
-      return token;
+      return token
     },
     async session({ session, token }) {
       if (session?.user) {
-        session.user.role = token.role as string;
-        session.user.document = token.document as string;
+        session.user.role = token.role
       }
-      return session;
+      return session
     }
-  },
-  session: {
-    strategy: 'jwt',
   }
-};
+})
 
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+export { handler as GET, handler as POST }
