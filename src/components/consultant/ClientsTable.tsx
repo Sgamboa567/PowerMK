@@ -65,15 +65,18 @@ export function ClientsTable() {
 
           if (error) throw error;
 
-          const formattedClients = data.map((client: Client) => ({
-            ...client,
-            last_purchase: client.sales?.length > 0 
-              ? client.sales.sort((a: Sale, b: Sale) => 
-                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                )[0].created_at 
-              : null,
-            total_purchases: client.sales?.reduce((sum: number, sale: Sale) => sum + sale.amount, 0) || 0
-          }));
+          const formattedClients = data.map((client: Client) => {
+            const sales = client.sales || [];
+            return {
+              ...client,
+              last_purchase: sales.length > 0 
+                ? [...sales].sort((a: Sale, b: Sale) => 
+                    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                  )[0].created_at 
+                : null,
+              total_purchases: sales.reduce((sum: number, sale: Sale) => sum + sale.amount, 0)
+            };
+          });
 
           setClients(formattedClients);
         } catch (error) {
