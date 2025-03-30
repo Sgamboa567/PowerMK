@@ -24,6 +24,11 @@ import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+interface Sale {
+  created_at: string;
+  amount: number;
+}
+
 interface Client {
   id: string;
   name: string;
@@ -31,8 +36,7 @@ interface Client {
   phone: string;
   email: string;
   birthday: string | null;
-  last_purchase: string | null;
-  total_purchases: number;
+  sales?: Sale[];
 }
 
 export function ClientsTable() {
@@ -61,14 +65,14 @@ export function ClientsTable() {
 
           if (error) throw error;
 
-          const formattedClients = data.map(client => ({
+          const formattedClients = data.map((client: Client) => ({
             ...client,
             last_purchase: client.sales?.length > 0 
-              ? client.sales.sort((a, b) => 
+              ? client.sales.sort((a: Sale, b: Sale) => 
                   new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
                 )[0].created_at 
               : null,
-            total_purchases: client.sales?.reduce((sum, sale) => sum + sale.amount, 0) || 0
+            total_purchases: client.sales?.reduce((sum: number, sale: Sale) => sum + sale.amount, 0) || 0
           }));
 
           setClients(formattedClients);
