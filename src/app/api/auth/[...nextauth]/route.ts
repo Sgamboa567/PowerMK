@@ -31,7 +31,7 @@ const handler = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
-          document: user.document,
+          document: user.document, // Ensure this field is included
         };
       }
     })
@@ -45,7 +45,7 @@ const handler = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session?.user) {
         session.user.role = token.role;
         session.user.document = token.document;
       }

@@ -6,6 +6,7 @@ declare module 'next-auth' {
     role: string;
     name: string;
     email: string;
+    document: string; // Added document field
   }
 
   interface Session {
@@ -16,5 +17,6 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     role: string;
+    document: string; // Added document field
   }
 }
