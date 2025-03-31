@@ -53,7 +53,7 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      console.log('Login result:', result); // Para debugging
+      console.log('Login result:', result);
 
       if (result?.error) {
         setError('Credenciales inválidas');
@@ -61,35 +61,50 @@ export default function LoginPage() {
         return;
       }
 
-      // Verificar el rol directamente desde Supabase
-      const { data: userData, error: roleError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('document', document)
-        .single();
+      if (result?.ok) {
+        try {
+          // Verificar el rol directamente desde Supabase
+          const { data: userData, error: roleError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('document', document)
+            .single();
 
-      if (roleError || !userData) {
-        setError('Error al obtener el rol del usuario');
-        setIsLoading(false);
-        return;
+          console.log('User data:', userData); // Debug log
+
+          if (roleError) {
+            console.error('Role error:', roleError);
+            setError('Error al obtener el rol del usuario');
+            setIsLoading(false);
+            return;
+          }
+
+          if (!userData) {
+            setError('Usuario no encontrado');
+            setIsLoading(false);
+            return;
+          }
+
+          // Forzar la redirección usando window.location
+          switch (userData.role) {
+            case 'admin':
+              window.location.href = '/admin';
+              break;
+            case 'consultant':
+              window.location.href = '/consultant';
+              break;
+            default:
+              window.location.href = '/dashboard';
+          }
+        } catch (error) {
+          console.error('Role verification error:', error);
+          setError('Error al verificar el rol del usuario');
+          setIsLoading(false);
+        }
       }
-
-      // Redireccionar basado en el rol
-      switch (userData.role) {
-        case 'admin':
-          router.push('/admin');
-          break;
-        case 'consultant':
-          router.push('/consultant');
-          break;
-        default:
-          router.push('/dashboard');
-      }
-
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
-    } finally {
       setIsLoading(false);
     }
   };
