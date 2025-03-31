@@ -22,15 +22,28 @@ import { useTheme } from '@mui/material/styles';
 import { supabase } from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
 
+interface Product {
+  name: string;
+  sku: string;
+  price: number;
+  min_stock: number;
+}
+
 interface InventoryItem {
   id: string;
+  quantity: number;
+  product: Product;
+}
+
+interface SupabaseInventoryResponse {
+  id: string;
+  quantity: number;
   product: {
     name: string;
     sku: string;
     price: number;
     min_stock: number;
   };
-  quantity: number;
 }
 
 export function InventoryTable() {
@@ -61,7 +74,19 @@ export function InventoryTable() {
             .order('id');
 
           if (error) throw error;
-          setInventory(data || []);
+
+          const formattedData: InventoryItem[] = (data as SupabaseInventoryResponse[]).map(item => ({
+            id: item.id,
+            quantity: item.quantity,
+            product: {
+              name: item.product.name,
+              sku: item.product.sku,
+              price: item.product.price,
+              min_stock: item.product.min_stock
+            }
+          }));
+
+          setInventory(formattedData);
         } catch (error) {
           console.error('Error fetching inventory:', error);
         } finally {
