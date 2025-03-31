@@ -29,9 +29,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
   const theme = useTheme();
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
+  }, [redirectTimeout]);
 
   // Verificar si ya hay una sesión activa
   useEffect(() => {
@@ -92,8 +102,14 @@ export default function LoginPage() {
             throw new Error('Error al obtener el rol del usuario');
           }
 
-          // Usar router.push en lugar de window.location
-          redirectBasedOnRole(userData.role);
+          // Set a small delay before redirecting
+          const timeout = setTimeout(() => {
+            const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://power-mk.vercel.app';
+            const redirectPath = userData.role === 'admin' ? '/admin' : '/consultant';
+            window.location.href = `${baseUrl}${redirectPath}`;
+          }, 1000);
+
+          setRedirectTimeout(timeout);
           
         } catch (error) {
           console.error('Role verification error:', error);
@@ -108,9 +124,22 @@ export default function LoginPage() {
     }
   };
 
-  // Si ya hay una sesión activa y estamos cargando, mostrar pantalla de carga
+  // Show loading screen while authenticating
   if (status === 'loading' || isLoading) {
-    return <LoadingScreen message="Iniciando sesión..." />;
+    return (
+      <LoadingScreen 
+        message={
+          status === 'loading' 
+            ? "Verificando sesión..." 
+            : "Iniciando sesión..."
+        } 
+      />
+    );
+  }
+
+  // If already authenticated, redirect
+  if (status === 'authenticated' && session?.user?.role) {
+    return <LoadingScreen message="Redirigiendo..." />;
   }
 
   return (
