@@ -11,11 +11,11 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.document || !credentials?.password) {
-          return null;
-        }
-
         try {
+          if (!credentials?.document || !credentials?.password) {
+            return null;
+          }
+
           const { data: user, error } = await supabase
             .from('users')
             .select('*')
@@ -30,31 +30,19 @@ const handler = NextAuth({
 
           return {
             id: user.id,
-            name: user.name,
+            name: user.name || user.document,
             email: user.email,
             role: user.role,
             document: user.document
           };
         } catch (error) {
-          console.error('Authorize error:', error);
+          console.error('Authorization error:', error);
           return null;
         }
       }
     })
   ],
-  pages: {
-    signIn: '/login',
-  },
-  session: {
-    strategy: "jwt",
-  },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      // Ensure proper URL formatting
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role;
@@ -63,13 +51,17 @@ const handler = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      if (session?.user) {
+      if (session.user) {
         session.user.role = token.role;
         session.user.document = token.document;
       }
       return session;
     }
   },
+  pages: {
+    signIn: '/login',
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
 export { handler as GET, handler as POST };

@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
+import { supabase } from '@/utils/supabaseClient';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -31,43 +32,51 @@ export default function LoginPage() {
     setError('');
     setIsLoading(true);
 
-    if (userType === 'client') {
-      router.push(`/catalogo?document=${document}`);
-      return;
-    }
-
     try {
+      if (userType === 'client') {
+        router.push(`/catalogo?document=${document}`);
+        return;
+      }
+
       const result = await signIn('credentials', {
         document,
         password,
         redirect: false,
       });
 
+      console.log('Login result:', result); // Para debugging
+
       if (result?.error) {
         setError('Credenciales inválidas');
+        setIsLoading(false);
         return;
       }
 
-      if (result?.ok) {
-        // Get the user's role
-        const response = await fetch('/api/auth/role', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ document }),
-        });
+      // Verificar el rol directamente desde Supabase
+      const { data: userData, error: roleError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('document', document)
+        .single();
 
-        const data = await response.json();
-
-        if (data.role === 'admin') {
-          router.push('/admin');
-        } else if (data.role === 'consultant') {
-          router.push('/consultant');
-        } else {
-          router.push('/dashboard');
-        }
+      if (roleError || !userData) {
+        setError('Error al obtener el rol del usuario');
+        setIsLoading(false);
+        return;
       }
+
+      // Redireccionar basado en el rol
+      switch (userData.role) {
+        case 'admin':
+          router.push('/admin');
+          break;
+        case 'consultant':
+          router.push('/consultant');
+          break;
+        default:
+          router.push('/dashboard');
+      }
+
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
