@@ -16,7 +16,12 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
-import { supabase } from '@/utils/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -26,6 +31,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const theme = useTheme();
+
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log('NextAuth URL:', process.env.NEXTAUTH_URL);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +134,7 @@ export default function LoginPage() {
         sx={{
           p: 4,
           maxWidth: 400,
-          width: '100%',
+          width: '100%'
         }}
       >
         <form onSubmit={handleSubmit}>
