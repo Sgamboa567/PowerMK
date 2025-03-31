@@ -37,6 +37,13 @@ interface Client {
   email: string;
   birthday: string | null;
   sales?: Sale[];
+  last_purchase?: string | null;
+  total_purchases?: number;
+}
+
+interface FormattedClient extends Client {
+  last_purchase: string | null;
+  total_purchases: number;
 }
 
 export function ClientsTable() {
@@ -44,7 +51,7 @@ export function ClientsTable() {
   const { data: session } = useSession();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<FormattedClient[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,7 +72,7 @@ export function ClientsTable() {
 
           if (error) throw error;
 
-          const formattedClients = data.map((client: Client) => {
+          const formattedClients = data.map((client: Client): FormattedClient => {
             const sales = client.sales || [];
             return {
               ...client,
