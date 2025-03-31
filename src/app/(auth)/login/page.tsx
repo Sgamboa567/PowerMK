@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -30,11 +30,28 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
   const theme = useTheme();
 
-  console.log('Environment:', process.env.NODE_ENV);
-  console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('NextAuth URL:', process.env.NEXTAUTH_URL);
+  // Verificar si ya hay una sesión activa
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role) {
+      redirectBasedOnRole(session.user.role);
+    }
+  }, [session, status]);
+
+  const redirectBasedOnRole = (role: string) => {
+    switch (role) {
+      case 'admin':
+        router.push('/admin');
+        break;
+      case 'consultant':
+        router.push('/consultant');
+        break;
+      default:
+        router.push('/dashboard');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,39 +80,21 @@ export default function LoginPage() {
 
       if (result?.ok) {
         try {
-          // Verificar el rol directamente desde Supabase
           const { data: userData, error: roleError } = await supabase
             .from('users')
             .select('role')
             .eq('document', document)
             .single();
 
-          console.log('User data:', userData); // Debug log
+          console.log('User data:', userData);
 
-          if (roleError) {
-            console.error('Role error:', roleError);
-            setError('Error al obtener el rol del usuario');
-            setIsLoading(false);
-            return;
+          if (roleError || !userData) {
+            throw new Error('Error al obtener el rol del usuario');
           }
 
-          if (!userData) {
-            setError('Usuario no encontrado');
-            setIsLoading(false);
-            return;
-          }
-
-          // Forzar la redirección usando window.location
-          switch (userData.role) {
-            case 'admin':
-              window.location.href = '/admin';
-              break;
-            case 'consultant':
-              window.location.href = '/consultant';
-              break;
-            default:
-              window.location.href = '/dashboard';
-          }
+          // Usar router.push en lugar de window.location
+          redirectBasedOnRole(userData.role);
+          
         } catch (error) {
           console.error('Role verification error:', error);
           setError('Error al verificar el rol del usuario');
@@ -109,7 +108,8 @@ export default function LoginPage() {
     }
   };
 
-  if (isLoading) {
+  // Si ya hay una sesión activa y estamos cargando, mostrar pantalla de carga
+  if (status === 'loading' || isLoading) {
     return <LoadingScreen message="Iniciando sesión..." />;
   }
 

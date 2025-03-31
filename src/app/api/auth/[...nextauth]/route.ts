@@ -11,11 +11,11 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        try {
-          if (!credentials?.document || !credentials?.password) {
-            return null;
-          }
+        if (!credentials?.document || !credentials?.password) {
+          return null;
+        }
 
+        try {
           const { data: user, error } = await supabase
             .from('users')
             .select('*')
@@ -30,7 +30,7 @@ const handler = NextAuth({
 
           return {
             id: user.id,
-            name: user.name || user.document,
+            name: user.name,
             email: user.email,
             role: user.role,
             document: user.document
