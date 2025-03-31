@@ -1,11 +1,12 @@
 'use client'
 import { Box, Drawer, List, ListItem, ListItemIcon, ListItemText, useTheme } from '@mui/material';
-import Link from 'next/link'; // Add this import
+import Link from 'next/link';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { useSession } from 'next-auth/react';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -51,17 +52,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           },
         }}
       >
-        <List>
-          {menuItems.map((item) => (
-            <ListItem button key={item.text} component={Link} href={item.path}>
-              <ListItemIcon sx={{ color: '#F5DADF' }}>
-                {item.icon}
+        <Box sx={{ overflow: 'auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <List>
+            {menuItems.map((item) => (
+              <ListItem button key={item.text} component={Link} href={item.path}>
+                <ListItemIcon sx={{ color: '#F5DADF' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItem>
+            ))}
+          </List>
+
+          {/* Spacer */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Logout button */}
+          <List>
+            <ListItem
+              button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              sx={{
+                color: theme.palette.error.main,
+                '&:hover': {
+                  backgroundColor: theme.palette.error.light,
+                },
+              }}
+            >
+              <ListItemIcon>
+                <LogoutIcon color="error" />
               </ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText primary="Cerrar Sesión" />
             </ListItem>
-          ))}
-        </List>
+          </List>
+        </Box>
       </Drawer>
+
       <Box
         component="main"
         sx={{

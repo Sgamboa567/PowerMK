@@ -13,17 +13,20 @@ import {
   Alert,
   Paper
 } from '@mui/material';
+import { LoadingScreen } from '@/components/common/LoadingScreen';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
   const [document, setDocument] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
 
     if (userType === 'client') {
       router.push(`/catalogo?document=${document}`);
@@ -39,6 +42,7 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError('Credenciales inválidas');
+        setIsLoading(false);
         return;
       }
 
@@ -64,8 +68,14 @@ export default function LoginPage() {
     } catch (error) {
       setError('Error al iniciar sesión');
       console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <LoadingScreen message="Iniciando sesión..." />;
+  }
 
   return (
     <Box

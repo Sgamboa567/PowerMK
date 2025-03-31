@@ -1,14 +1,30 @@
 'use client'
+import { useState, useEffect } from 'react';
 import { Box, Button, Container, Paper, Typography, IconButton, Stack } from '@mui/material';
 import Link from 'next/link';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTheme as useMUITheme } from '@mui/material/styles';
 import { useTheme } from '@/components/ThemeProvider';
+import { LoadingScreen } from '@/components/common/LoadingScreen';
 
 export default function Home() {
   const theme = useMUITheme();
   const { toggleTheme } = useTheme();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simular tiempo de carga inicial
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500); // 1.5 segundos de animación
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <LoadingScreen message="Bienvenida a PowerMK" />;
+  }
 
   return (
     <Box
