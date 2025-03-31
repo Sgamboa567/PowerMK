@@ -35,7 +35,7 @@ interface InventoryItem {
   product: Product;
 }
 
-interface SupabaseInventoryResponse {
+interface RawInventoryData {
   id: string;
   quantity: number;
   product: {
@@ -75,7 +75,8 @@ export function InventoryTable() {
 
           if (error) throw error;
 
-          const formattedData: InventoryItem[] = (data as SupabaseInventoryResponse[]).map(item => ({
+          const rawData = data as unknown as RawInventoryData[];
+          const formattedData: InventoryItem[] = rawData.map(item => ({
             id: item.id,
             quantity: item.quantity,
             product: {
