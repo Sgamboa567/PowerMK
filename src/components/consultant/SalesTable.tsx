@@ -42,7 +42,7 @@ interface RawSale {
   id: string;
   amount: number;
   created_at: string;
-  clients: Client;
+  clients: Client; // Changed from Client[] to Client
   sale_products: SaleProduct[];
 }
 
@@ -55,12 +55,7 @@ interface FormattedSale {
 }
 
 export function SalesTable() {
-  const theme = useTheme();
-  const { data: session } = useSession();
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sales, setSales] = useState<FormattedSale[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ...existing code...
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -88,15 +83,15 @@ export function SalesTable() {
 
           if (error) throw error;
 
-          const formattedSales = (data as RawSale[]).map(sale => ({
+          const formattedSales: FormattedSale[] = data?.map((sale: any) => ({
             id: sale.id,
             client_name: sale.clients?.name || 'Cliente no registrado',
             amount: sale.amount,
             created_at: sale.created_at,
-            products: sale.sale_products?.map(sp => 
+            products: sale.sale_products?.map((sp: any) => 
               `${sp.products.name} (${sp.quantity} x $${sp.price_at_sale.toLocaleString()})`
             ) || []
-          }));
+          })) || [];
 
           setSales(formattedSales);
         } catch (error) {
