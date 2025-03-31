@@ -42,7 +42,7 @@ interface RawSale {
   id: string;
   amount: number;
   created_at: string;
-  clients: Client; // Changed from Client[] to Client
+  clients: Client;
   sale_products: SaleProduct[];
 }
 
@@ -55,7 +55,12 @@ interface FormattedSale {
 }
 
 export function SalesTable() {
-  // ...existing code...
+  const theme = useTheme();
+  const { data: session } = useSession();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sales, setSales] = useState<FormattedSale[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSales = async () => {
