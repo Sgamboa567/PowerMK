@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import {
   Box,
   Paper,
@@ -13,16 +15,38 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  Chip,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { useTheme } from '@mui/material/styles';
 import { supabase } from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
-interface Sale {
+interface Product {
+  name: string;
+}
+
+interface SaleProduct {
+  product_id: string;
+  quantity: number;
+  price_at_sale: number;
+  products: Product;
+}
+
+interface Client {
+  name: string;
+}
+
+interface RawSale {
+  id: string;
+  amount: number;
+  created_at: string;
+  clients: Client;
+  sale_products: SaleProduct[];
+}
+
+interface FormattedSale {
   id: string;
   client_name: string;
   amount: number;
@@ -35,7 +59,7 @@ export function SalesTable() {
   const { data: session } = useSession();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sales, setSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<FormattedSale[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +76,8 @@ export function SalesTable() {
                 name
               ),
               sale_products (
+                quantity,
+                price_at_sale,
                 products (
                   name
                 )
@@ -62,12 +88,14 @@ export function SalesTable() {
 
           if (error) throw error;
 
-          const formattedSales = data.map(sale => ({
+          const formattedSales = (data as RawSale[]).map(sale => ({
             id: sale.id,
             client_name: sale.clients?.name || 'Cliente no registrado',
             amount: sale.amount,
             created_at: sale.created_at,
-            products: sale.sale_products?.map(sp => sp.products.name) || []
+            products: sale.sale_products?.map(sp => 
+              `${sp.products.name} (${sp.quantity} x $${sp.price_at_sale.toLocaleString()})`
+            ) || []
           }));
 
           setSales(formattedSales);
