@@ -23,6 +23,7 @@ const handler = NextAuth({
           .single();
 
         if (error || !user) {
+          console.error('Auth error:', error);
           return null;
         }
 
@@ -31,7 +32,7 @@ const handler = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
-          document: user.document, // Ensure this field is included
+          document: user.document,
         };
       }
     })
@@ -54,6 +55,9 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/login',
+  },
+  session: {
+    strategy: "jwt", // Añadido: estrategia de sesión
   },
 });
 

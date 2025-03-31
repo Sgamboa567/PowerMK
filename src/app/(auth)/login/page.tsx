@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Box,
   Button,
@@ -13,6 +14,7 @@ import {
   Alert,
   Paper
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 
 export default function LoginPage() {
@@ -22,6 +24,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const theme = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,36 +41,37 @@ export default function LoginPage() {
         document,
         password,
         redirect: false,
+        callbackUrl: '/consultant' // Añadir callbackUrl por defecto
       });
 
       if (result?.error) {
         setError('Credenciales inválidas');
-        setIsLoading(false);
         return;
       }
 
-      // Obtener el rol del usuario
-      const response = await fetch('/api/user/role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ document }),
-      });
+      if (result?.ok) {
+        // Redirección directa basada en las credenciales
+        const response = await fetch('/api/auth/role', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ document }),
+        });
 
-      const { role } = await response.json();
+        const { role } = await response.json();
 
-      // Redireccionar según el rol
-      if (role === 'admin') {
-        router.push('/admin');
-      } else if (role === 'consultant') {
-        router.push('/consultant');
-      } else {
-        router.push('/dashboard');
+        if (role === 'admin') {
+          router.push('/admin');
+        } else if (role === 'consultant') {
+          router.push('/consultant');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
-      setError('Error al iniciar sesión');
       console.error('Login error:', error);
+      setError('Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }
@@ -82,11 +86,32 @@ export default function LoginPage() {
       sx={{
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         bgcolor: 'background.default'
       }}
     >
+      <Link href="/" style={{ textDecoration: 'none' }}>
+        <Typography
+          variant="h2"
+          component="h1"
+          sx={{
+            fontWeight: 700,
+            color: theme.palette.mode === 'dark' ? '#F5DADF' : '#000000',
+            fontSize: { xs: '2.5rem', md: '3.5rem' },
+            mb: 4,
+            transition: 'color 0.3s ease',
+            cursor: 'pointer',
+            '&:hover': {
+              color: theme.palette.mode === 'dark' ? '#ffffff' : '#F5DADF',
+            }
+          }}
+        >
+          PowerMK
+        </Typography>
+      </Link>
+
       <Paper
         elevation={3}
         sx={{
