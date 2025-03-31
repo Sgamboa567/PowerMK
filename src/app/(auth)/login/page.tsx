@@ -40,16 +40,16 @@ export default function LoginPage() {
       const result = await signIn('credentials', {
         document,
         password,
-        redirect: false
+        redirect: false,
       });
 
       if (result?.error) {
         setError('Credenciales inválidas');
-        setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
+        // Get the user's role
         const response = await fetch('/api/auth/role', {
           method: 'POST',
           headers: {
@@ -60,13 +60,6 @@ export default function LoginPage() {
 
         const data = await response.json();
 
-        if (data.error) {
-          setError('Error al verificar el rol');
-          setIsLoading(false);
-          return;
-        }
-
-        // Redirigir según el rol
         if (data.role === 'admin') {
           router.push('/admin');
         } else if (data.role === 'consultant') {
