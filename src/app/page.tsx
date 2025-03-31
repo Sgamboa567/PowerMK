@@ -140,7 +140,7 @@ export default function Home() {
 
             <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
               Explora nuestro catálogo y realiza pedidos sin necesidad de registro, 
-              o inicia sesión como consultora para acceder a todas las funcionalidades.
+              o inicia sesión como consultor/a para acceder a todas las funcionalidades.
             </Typography>
           </Stack>
         </Paper>

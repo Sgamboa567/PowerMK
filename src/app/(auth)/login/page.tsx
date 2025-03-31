@@ -40,17 +40,16 @@ export default function LoginPage() {
       const result = await signIn('credentials', {
         document,
         password,
-        redirect: false,
-        callbackUrl: '/consultant' // Añadir callbackUrl por defecto
+        redirect: false
       });
 
       if (result?.error) {
         setError('Credenciales inválidas');
+        setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
-        // Redirección directa basada en las credenciales
         const response = await fetch('/api/auth/role', {
           method: 'POST',
           headers: {
@@ -59,11 +58,18 @@ export default function LoginPage() {
           body: JSON.stringify({ document }),
         });
 
-        const { role } = await response.json();
+        const data = await response.json();
 
-        if (role === 'admin') {
+        if (data.error) {
+          setError('Error al verificar el rol');
+          setIsLoading(false);
+          return;
+        }
+
+        // Redirigir según el rol
+        if (data.role === 'admin') {
           router.push('/admin');
-        } else if (role === 'consultant') {
+        } else if (data.role === 'consultant') {
           router.push('/consultant');
         } else {
           router.push('/dashboard');
@@ -134,7 +140,7 @@ export default function LoginPage() {
             sx={{ mb: 2 }}
           >
             <ToggleButton value="client">Cliente</ToggleButton>
-            <ToggleButton value="consultant">Consultora</ToggleButton>
+            <ToggleButton value="consultant">Consultor/a</ToggleButton>
           </ToggleButtonGroup>
 
           <TextField
