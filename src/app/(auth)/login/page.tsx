@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Box,
@@ -25,6 +25,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const theme = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,21 +39,16 @@ export default function LoginPage() {
         document,
         password,
         redirect: false,
+        callbackUrl,
       });
 
       if (result?.error) {
         setError('Credenciales inválidas');
-        setIsLoading(false);
         return;
       }
 
-      // Verificar el rol sin hacer una nueva consulta a Supabase
-      if (session?.user?.role === 'admin') {
-        router.push('/admin');
-      } else if (session?.user?.role === 'consultant') {
-        router.push('/consultant');
-      } else {
-        router.push('/dashboard');
+      if (result?.ok) {
+        router.refresh();
       }
     } catch (error) {
       console.error('Login error:', error);

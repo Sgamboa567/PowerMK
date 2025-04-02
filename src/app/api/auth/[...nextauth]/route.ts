@@ -12,26 +12,31 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
+          if (!credentials?.document || !credentials?.password) {
+            return null;
+          }
+
           const { data: user, error } = await supabase
             .from('users')
             .select('*')
-            .eq('document', credentials?.document)
-            .eq('password', credentials?.password)
+            .eq('document', credentials.document)
+            .eq('password', credentials.password)
             .single();
 
           if (error || !user) {
+            console.error('Auth error:', error);
             return null;
           }
 
           return {
             id: user.id,
-            name: user.name,
+            name: user.name || user.document,
             email: user.email,
             role: user.role,
             document: user.document
           };
         } catch (error) {
-          console.error('Auth error:', error);
+          console.error('Authorization error:', error);
           return null;
         }
       }
@@ -41,6 +46,10 @@ const handler = NextAuth({
     signIn: '/login',
     error: '/login',
     signOut: '/login'
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -57,10 +66,6 @@ const handler = NextAuth({
       }
       return session;
     }
-  },
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   debug: process.env.NODE_ENV === 'development',
 });
