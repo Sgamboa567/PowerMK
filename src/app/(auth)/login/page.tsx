@@ -16,12 +16,6 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -29,39 +23,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
   const theme = useTheme();
-
-  // Clear timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (redirectTimeout) {
-        clearTimeout(redirectTimeout);
-      }
-    };
-  }, [redirectTimeout]);
-
-  // Verificar si ya hay una sesión activa
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role) {
-      redirectBasedOnRole(session.user.role);
-    }
-  }, [session, status]);
-
-  const redirectBasedOnRole = (role: string) => {
-    switch (role) {
-      case 'admin':
-        router.push('/admin');
-        break;
-      case 'consultant':
-        router.push('/consultant');
-        break;
-      default:
-        router.push('/dashboard');
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,18 +33,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      if (userType === 'client') {
-        router.push(`/catalogo?document=${document}`);
-        return;
-      }
-
       const result = await signIn('credentials', {
         document,
         password,
         redirect: false,
       });
-
-      console.log('Login result:', result);
 
       if (result?.error) {
         setError('Credenciales inválidas');
@@ -88,56 +45,38 @@ export default function LoginPage() {
         return;
       }
 
-      if (result?.ok) {
-        try {
-          const { data: userData, error: roleError } = await supabase
-            .from('users')
-            .select('role')
-            .eq('document', document)
-            .single();
-
-          console.log('User data:', userData);
-
-          if (roleError || !userData) {
-            throw new Error('Error al obtener el rol del usuario');
-          }
-
-          // Set a small delay before redirecting
-          const timeout = setTimeout(() => {
-            const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://power-mk.vercel.app';
-            const redirectPath = userData.role === 'admin' ? '/admin' : '/consultant';
-            window.location.href = `${baseUrl}${redirectPath}`;
-          }, 1000);
-
-          setRedirectTimeout(timeout);
-          
-        } catch (error) {
-          console.error('Role verification error:', error);
-          setError('Error al verificar el rol del usuario');
-          setIsLoading(false);
-        }
+      // Verificar el rol sin hacer una nueva consulta a Supabase
+      if (session?.user?.role === 'admin') {
+        router.push('/admin');
+      } else if (session?.user?.role === 'consultant') {
+        router.push('/consultant');
+      } else {
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Show loading screen while authenticating
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role) {
+      if (session.user.role === 'admin') {
+        router.push('/admin');
+      } else if (session.user.role === 'consultant') {
+        router.push('/consultant');
+      } else {
+        router.push('/dashboard');
+      }
+    }
+  }, [status, session?.user?.role]);
+
   if (status === 'loading' || isLoading) {
-    return (
-      <LoadingScreen 
-        message={
-          status === 'loading' 
-            ? "Verificando sesión..." 
-            : "Iniciando sesión..."
-        } 
-      />
-    );
+    return <LoadingScreen message="Verificando credenciales..." />;
   }
 
-  // If already authenticated, redirect
   if (status === 'authenticated' && session?.user?.role) {
     return <LoadingScreen message="Redirigiendo..." />;
   }

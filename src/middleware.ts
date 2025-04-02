@@ -6,20 +6,21 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Logging para debug
-    console.log('Middleware - Path:', path);
-    console.log('Middleware - Token:', token);
+    // Permitir acceso a rutas públicas
+    if (path === '/login' || path === '/catalogo') {
+      return NextResponse.next();
+    }
 
+    // Si no hay token, redirigir al login
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Proteger rutas admin
+    // Proteger rutas según el rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Proteger rutas consultant
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
       return NextResponse.redirect(new URL('/login', req.url));
     }
@@ -34,5 +35,9 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ['/admin/:path*', '/consultant/:path*']
+  matcher: [
+    '/admin/:path*',
+    '/consultant/:path*',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ]
 };
