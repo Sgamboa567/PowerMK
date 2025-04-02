@@ -45,11 +45,6 @@ const handler = NextAuth({
   pages: {
     signIn: '/login',
     error: '/login',
-    signOut: '/login'
-  },
-  session: {
-    strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 días
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -65,9 +60,17 @@ const handler = NextAuth({
         session.user.document = token.document;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Manejar redirecciones personalizadas
+      if (url.startsWith(baseUrl)) return url;
+      return baseUrl;
     }
   },
-  debug: process.env.NODE_ENV === 'development',
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 días
+  }
 });
 
 export { handler as GET, handler as POST };
