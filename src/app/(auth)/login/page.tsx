@@ -62,13 +62,13 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
-        const timeout = setTimeout(() => {
-          setError('Error al redireccionar. Por favor, intenta nuevamente.');
+        try {
+          router.refresh();
+        } catch (error) {
+          console.error('Navigation error:', error);
+          setError('Error al procesar la solicitud. Por favor, intenta nuevamente.');
           setIsLoading(false);
-        }, 5000);
-
-        setRedirectTimeout(timeout);
-        router.refresh();
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -79,23 +79,26 @@ export default function LoginPage() {
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
+    let fallbackTimeout: NodeJS.Timeout;
 
     if (status === 'authenticated' && session?.user?.role) {
       const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
 
-      timeout = setTimeout(() => {
-        router.replace(redirectPath)
-          .catch((error) => {
-            console.error('Redirect error:', error);
-            setError('Error al redireccionar. Por favor, recarga la página.');
-            setIsLoading(false);
-          });
-      }, 1000);
+      try {
+        timeout = setTimeout(() => {
+          router.replace(redirectPath);
+        }, 1000);
 
-      const fallbackTimeout = setTimeout(() => {
-        setError('La redirección está tomando demasiado tiempo. Por favor, intenta nuevamente.');
+        // Fallback en caso de que la redirección tome demasiado tiempo
+        fallbackTimeout = setTimeout(() => {
+          setError('La redirección está tomando demasiado tiempo. Por favor, intenta nuevamente.');
+          setIsLoading(false);
+        }, 5000);
+      } catch (error) {
+        console.error('Redirect error:', error);
+        setError('Error al redireccionar. Por favor, recarga la página.');
         setIsLoading(false);
-      }, 5000);
+      }
 
       return () => {
         clearTimeout(timeout);
