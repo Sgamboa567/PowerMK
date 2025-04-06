@@ -9,36 +9,48 @@ export default withAuth(
     // Lista de rutas públicas
     const publicPaths = ['/', '/login', '/catalogo'];
     
-    // Permitir acceso a rutas públicas
     if (publicPaths.includes(path)) {
+      // Si está autenticado e intenta acceder al login, redirigir según rol
+      if (path === '/login' && token) {
+        const redirectPath = token.role === 'admin' ? '/admin' : '/consultant';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
+      }
       return NextResponse.next();
     }
 
     // Si no hay token, redirigir al login
     if (!token) {
-      return NextResponse.redirect(new URL('/login', req.url));
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('from', path);
+      return NextResponse.redirect(loginUrl);
     }
 
     // Proteger rutas por rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/consultant', req.url));
     }
 
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/admin', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ req, token }) => {
-        // Permitir rutas públicas sin token
-        if (req.nextUrl.pathname === '/login' || 
-            req.nextUrl.pathname === '/' || 
-            req.nextUrl.pathname === '/catalogo') {
+      authorized: ({ token, req }) => {
+        const path = req.nextUrl.pathname;
+        
+        // Siempre permitir rutas públicas
+        if (path === '/' || path === '/catalogo') {
           return true;
         }
+
+        // Permitir acceso a login solo si no está autenticado
+        if (path === '/login') {
+          return !token;
+        }
+
         // Para otras rutas, requerir token
         return !!token;
       },
@@ -48,6 +60,13 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ]
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
 };
