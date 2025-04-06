@@ -24,7 +24,6 @@ const handler = NextAuth({
             .single();
 
           if (error || !user) {
-            console.error('Auth error:', error);
             return null;
           }
 
@@ -36,17 +35,12 @@ const handler = NextAuth({
             document: user.document
           };
         } catch (error) {
-          console.error('Authorization error:', error);
+          console.error('Auth error:', error);
           return null;
         }
       }
     })
   ],
-  pages: {
-    signIn: '/login',
-    error: '/login',
-    signOut: '/login'
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -63,11 +57,13 @@ const handler = NextAuth({
       return session;
     }
   },
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 días
+  pages: {
+    signIn: '/login'
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60 // 30 días
+  }
 });
 
 export { handler as GET, handler as POST };
