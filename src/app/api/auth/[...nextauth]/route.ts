@@ -11,11 +11,11 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        try {
-          if (!credentials?.document || !credentials?.password) {
-            return null;
-          }
+        if (!credentials?.document || !credentials?.password) {
+          return null;
+        }
 
+        try {
           const { data: user, error } = await supabase
             .from('users')
             .select('*')
@@ -45,6 +45,7 @@ const handler = NextAuth({
   pages: {
     signIn: '/login',
     error: '/login',
+    signOut: '/login'
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -60,17 +61,13 @@ const handler = NextAuth({
         session.user.document = token.document;
       }
       return session;
-    },
-    async redirect({ url, baseUrl }) {
-      // Manejar redirecciones personalizadas
-      if (url.startsWith(baseUrl)) return url;
-      return baseUrl;
     }
   },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 días
-  }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
 export { handler as GET, handler as POST };

@@ -60,15 +60,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.role) {
-      if (session.user.role === 'admin') {
-        router.push('/admin');
-      } else if (session.user.role === 'consultant') {
-        router.push('/consultant');
-      } else {
-        router.push('/dashboard');
-      }
+      const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
+      router.replace(redirectPath);
     }
-  }, [status, session?.user?.role]);
+  }, [status, session, router]);
 
   if (status === 'loading' || isLoading) {
     return <LoadingScreen message="Verificando credenciales..." />;

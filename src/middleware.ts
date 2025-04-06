@@ -6,56 +6,38 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Rutas públicas que no requieren autenticación
-    if (path === '/' || path === '/login' || path === '/catalogo') {
-      // Si el usuario está autenticado y trata de acceder al login, redirigir según su rol
+    // Permitir rutas públicas
+    if (['/login', '/catalogo', '/'].includes(path)) {
       if (path === '/login' && token?.role) {
-        switch (token.role) {
-          case 'admin':
-            return NextResponse.redirect(new URL('/admin', req.url));
-          case 'consultant':
-            return NextResponse.redirect(new URL('/consultant', req.url));
-          default:
-            return NextResponse.redirect(new URL('/', req.url));
-        }
+        const redirectPath = token.role === 'admin' ? '/admin' : '/consultant';
+        return NextResponse.redirect(new URL(redirectPath, req.url));
       }
       return NextResponse.next();
     }
 
-    // Si no hay token y la ruta requiere autenticación
+    // Proteger rutas autenticadas
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Protección de rutas basada en roles
+    // Redirigir según rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        // Permitir acceso a rutas públicas sin token
-        if (req.nextUrl.pathname === '/' || 
-            req.nextUrl.pathname === '/login' || 
-            req.nextUrl.pathname === '/catalogo') {
-          return true;
-        }
-        // Para otras rutas, requerir token
-        return !!token;
-      },
+      authorized: () => true // Permitir que el middleware maneje toda la lógica
     },
   }
 );
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ]
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 };
