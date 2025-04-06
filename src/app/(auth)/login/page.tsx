@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -28,17 +28,13 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const theme = useTheme();
 
-  // Check authentication status
-  if (status === 'loading') {
-    return <LoadingScreen message="Verificando sesión..." />;
-  }
-
-  // If already authenticated, redirect
-  if (status === 'authenticated' && session?.user?.role) {
-    const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
-    router.replace(redirectPath);
-    return <LoadingScreen message="Redirigiendo..." />;
-  }
+  useEffect(() => {
+    // Si el usuario ya está autenticado, redirigir solo una vez
+    if (status === 'authenticated' && session?.user?.role) {
+      const path = session.user.role === 'admin' ? '/admin' : '/consultant';
+      window.location.href = path; // Usar window.location para evitar ciclos
+    }
+  }, [status, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,31 +55,26 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError('Credenciales inválidas');
+        setIsLoading(false);
         return;
       }
 
-      if (result?.ok) {
-        const { data: userData, error: roleError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('document', document)
-          .single();
-
-        if (roleError || !userData) {
-          setError('Error al verificar el rol');
-          return;
-        }
-
-        const redirectPath = userData.role === 'admin' ? '/admin' : '/consultant';
-        router.replace(redirectPath);
+      // No hacer redirección aquí, dejar que el useEffect se encargue
+      if (!result?.ok) {
+        setError('Error al iniciar sesión');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
-    } finally {
       setIsLoading(false);
     }
   };
+
+  // Mostrar loading solo durante la autenticación inicial
+  if (status === 'loading') {
+    return <LoadingScreen message="Verificando sesión..." />;
+  }
 
   return (
     <Box

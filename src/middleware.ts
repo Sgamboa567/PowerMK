@@ -6,15 +6,11 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Rutas públicas
+    // Lista de rutas públicas
     const publicPaths = ['/', '/login', '/catalogo'];
+    
+    // Permitir acceso a rutas públicas
     if (publicPaths.includes(path)) {
-      if (token && path === '/login') {
-        // Si está autenticado y trata de acceder al login, redirigir según rol
-        return NextResponse.redirect(
-          new URL(token.role === 'admin' ? '/admin' : '/consultant', req.url)
-        );
-      }
       return NextResponse.next();
     }
 
@@ -23,24 +19,35 @@ export default withAuth(
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Protección de rutas por rol
+    // Proteger rutas por rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
-      return NextResponse.redirect(new URL('/consultant', req.url));
+      return NextResponse.redirect(new URL('/', req.url));
     }
 
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
-      return NextResponse.redirect(new URL('/admin', req.url));
+      return NextResponse.redirect(new URL('/', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ req, token }) => {
+        // Permitir rutas públicas sin token
+        if (req.nextUrl.pathname === '/login' || 
+            req.nextUrl.pathname === '/' || 
+            req.nextUrl.pathname === '/catalogo') {
+          return true;
+        }
+        // Para otras rutas, requerir token
+        return !!token;
+      },
     },
   }
 );
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ]
 };
