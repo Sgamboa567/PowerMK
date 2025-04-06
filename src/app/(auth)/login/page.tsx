@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -23,7 +24,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
@@ -31,12 +32,21 @@ export default function LoginPage() {
   const theme = useTheme();
 
   useEffect(() => {
+    let redirectTimer: NodeJS.Timeout;
+
+    if (status === 'authenticated' && session?.user?.role) {
+      setIsRedirecting(true);
+      const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
+
+      redirectTimer = setTimeout(() => {
+        window.location.href = redirectPath;
+      }, 2000);
+    }
+
     return () => {
-      if (redirectTimeout) {
-        clearTimeout(redirectTimeout);
-      }
+      if (redirectTimer) clearTimeout(redirectTimer);
     };
-  }, [redirectTimeout]);
+  }, [status, session]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,13 +72,15 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
-        try {
-          router.refresh();
-        } catch (error) {
-          console.error('Navigation error:', error);
-          setError('Error al procesar la solicitud. Por favor, intenta nuevamente.');
-          setIsLoading(false);
-        }
+        setIsRedirecting(true);
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('document', document)
+          .single();
+
+        const redirectPath = userData?.role === 'admin' ? '/admin' : '/consultant';
+        window.location.href = redirectPath;
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -77,37 +89,7 @@ export default function LoginPage() {
     }
   };
 
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    let fallbackTimeout: NodeJS.Timeout;
-
-    if (status === 'authenticated' && session?.user?.role) {
-      const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
-
-      try {
-        timeout = setTimeout(() => {
-          router.replace(redirectPath);
-        }, 1000);
-
-        // Fallback en caso de que la redirección tome demasiado tiempo
-        fallbackTimeout = setTimeout(() => {
-          setError('La redirección está tomando demasiado tiempo. Por favor, intenta nuevamente.');
-          setIsLoading(false);
-        }, 5000);
-      } catch (error) {
-        console.error('Redirect error:', error);
-        setError('Error al redireccionar. Por favor, recarga la página.');
-        setIsLoading(false);
-      }
-
-      return () => {
-        clearTimeout(timeout);
-        clearTimeout(fallbackTimeout);
-      };
-    }
-  }, [status, session, router]);
-
-  if (status === 'loading' || isLoading) {
+  if (isRedirecting || status === 'loading' || isLoading) {
     return (
       <Box sx={{ 
         minHeight: '100vh', 
@@ -116,7 +98,7 @@ export default function LoginPage() {
         alignItems: 'center',
         justifyContent: 'center' 
       }}>
-        <LoadingScreen message="Verificando credenciales..." />
+        <LoadingScreen message={isRedirecting ? "Redirigiendo..." : "Verificando credenciales..."} />
         {error && (
           <Alert severity="error" sx={{ mt: 2, maxWidth: 400 }}>
             {error}
@@ -124,10 +106,6 @@ export default function LoginPage() {
         )}
       </Box>
     );
-  }
-
-  if (status === 'authenticated' && session?.user?.role) {
-    return <LoadingScreen message="Redirigiendo..." />;
   }
 
   return (

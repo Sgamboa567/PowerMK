@@ -23,13 +23,11 @@ const handler = NextAuth({
             .eq('password', credentials.password)
             .single();
 
-          if (error || !user) {
-            return null;
-          }
+          if (error || !user) return null;
 
           return {
             id: user.id,
-            name: user.name || user.document,
+            name: user.name,
             email: user.email,
             role: user.role,
             document: user.document
@@ -58,11 +56,11 @@ const handler = NextAuth({
     }
   },
   pages: {
-    signIn: '/login'
+    signIn: '/login',
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60 // 30 días
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   }
 });
 

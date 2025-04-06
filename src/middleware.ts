@@ -6,34 +6,37 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Permitir rutas públicas
-    if (['/login', '/catalogo', '/'].includes(path)) {
-      if (path === '/login' && token?.role) {
-        const redirectPath = token.role === 'admin' ? '/admin' : '/consultant';
-        return NextResponse.redirect(new URL(redirectPath, req.url));
+    // Rutas públicas
+    const publicPaths = ['/', '/login', '/catalogo'];
+    if (publicPaths.includes(path)) {
+      if (token && path === '/login') {
+        // Si está autenticado y trata de acceder al login, redirigir según rol
+        return NextResponse.redirect(
+          new URL(token.role === 'admin' ? '/admin' : '/consultant', req.url)
+        );
       }
       return NextResponse.next();
     }
 
-    // Proteger rutas autenticadas
+    // Si no hay token, redirigir al login
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Redirigir según rol
+    // Protección de rutas por rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
-      return NextResponse.redirect(new URL('/login', req.url));
+      return NextResponse.redirect(new URL('/consultant', req.url));
     }
 
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
-      return NextResponse.redirect(new URL('/login', req.url));
+      return NextResponse.redirect(new URL('/admin', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: () => true // Permitir que el middleware maneje toda la lógica
+      authorized: ({ token }) => !!token,
     },
   }
 );
