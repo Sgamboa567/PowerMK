@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Box,
@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase'; // Updated import path
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -24,29 +24,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
   const { data: session, status } = useSession();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const theme = useTheme();
 
-  useEffect(() => {
-    let redirectTimer: NodeJS.Timeout;
+  // Check authentication status
+  if (status === 'loading') {
+    return <LoadingScreen message="Verificando sesión..." />;
+  }
 
-    if (status === 'authenticated' && session?.user?.role) {
-      setIsRedirecting(true);
-      const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
-
-      redirectTimer = setTimeout(() => {
-        window.location.href = redirectPath;
-      }, 2000);
-    }
-
-    return () => {
-      if (redirectTimer) clearTimeout(redirectTimer);
-    };
-  }, [status, session]);
+  // If already authenticated, redirect
+  if (status === 'authenticated' && session?.user?.role) {
+    const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
+    router.replace(redirectPath);
+    return <LoadingScreen message="Redirigiendo..." />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,46 +59,31 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError('Credenciales inválidas');
-        setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
-        setIsRedirecting(true);
-        const { data: userData } = await supabase
+        const { data: userData, error: roleError } = await supabase
           .from('users')
           .select('role')
           .eq('document', document)
           .single();
 
-        const redirectPath = userData?.role === 'admin' ? '/admin' : '/consultant';
-        window.location.href = redirectPath;
+        if (roleError || !userData) {
+          setError('Error al verificar el rol');
+          return;
+        }
+
+        const redirectPath = userData.role === 'admin' ? '/admin' : '/consultant';
+        router.replace(redirectPath);
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
+    } finally {
       setIsLoading(false);
     }
   };
-
-  if (isRedirecting || status === 'loading' || isLoading) {
-    return (
-      <Box sx={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center' 
-      }}>
-        <LoadingScreen message={isRedirecting ? "Redirigiendo..." : "Verificando credenciales..."} />
-        {error && (
-          <Alert severity="error" sx={{ mt: 2, maxWidth: 400 }}>
-            {error}
-          </Alert>
-        )}
-      </Box>
-    );
-  }
 
   return (
     <Box
