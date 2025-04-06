@@ -23,11 +23,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [redirectTimeout, setRedirectTimeout] = useState<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
   const theme = useTheme();
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeout) {
+        clearTimeout(redirectTimeout);
+      }
+    };
+  }, [redirectTimeout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,38 +44,83 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      if (userType === 'client') {
+        router.push(`/catalogo?document=${document}`);
+        return;
+      }
+
       const result = await signIn('credentials', {
         document,
         password,
         redirect: false,
-        callbackUrl,
       });
 
       if (result?.error) {
         setError('Credenciales inválidas');
+        setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
+        const timeout = setTimeout(() => {
+          setError('Error al redireccionar. Por favor, intenta nuevamente.');
+          setIsLoading(false);
+        }, 5000);
+
+        setRedirectTimeout(timeout);
         router.refresh();
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
-    } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
     if (status === 'authenticated' && session?.user?.role) {
       const redirectPath = session.user.role === 'admin' ? '/admin' : '/consultant';
-      router.replace(redirectPath);
+
+      timeout = setTimeout(() => {
+        router.replace(redirectPath)
+          .catch((error) => {
+            console.error('Redirect error:', error);
+            setError('Error al redireccionar. Por favor, recarga la página.');
+            setIsLoading(false);
+          });
+      }, 1000);
+
+      const fallbackTimeout = setTimeout(() => {
+        setError('La redirección está tomando demasiado tiempo. Por favor, intenta nuevamente.');
+        setIsLoading(false);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timeout);
+        clearTimeout(fallbackTimeout);
+      };
     }
   }, [status, session, router]);
 
   if (status === 'loading' || isLoading) {
-    return <LoadingScreen message="Verificando credenciales..." />;
+    return (
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center' 
+      }}>
+        <LoadingScreen message="Verificando credenciales..." />
+        {error && (
+          <Alert severity="error" sx={{ mt: 2, maxWidth: 400 }}>
+            {error}
+          </Alert>
+        )}
+      </Box>
+    );
   }
 
   if (status === 'authenticated' && session?.user?.role) {
