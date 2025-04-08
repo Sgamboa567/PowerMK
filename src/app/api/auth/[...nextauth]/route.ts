@@ -39,6 +39,9 @@ const handler = NextAuth({
       }
     })
   ],
+  pages: {
+    signIn: '/login',
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -55,13 +58,11 @@ const handler = NextAuth({
       return session;
     }
   },
-  pages: {
-    signIn: '/login',
-  },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 días
-  }
+    maxAge: 24 * 60 * 60, // 24 hours
+  },
+  debug: process.env.NODE_ENV === 'development',
 });
 
 export { handler as GET, handler as POST };

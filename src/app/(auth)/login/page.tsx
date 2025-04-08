@@ -28,15 +28,6 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const theme = useTheme();
 
-  // Manejo de redirección basado en sesión
-  useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role) {
-      console.log('Session state:', { status, role: session.user.role }); // Para debugging
-      const path = session.user.role === 'admin' ? '/admin' : '/consultant';
-      router.replace(path);
-    }
-  }, [status, session, router]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -48,15 +39,11 @@ export default function LoginPage() {
         return;
       }
 
-      console.log('Attempting login with:', document); // Para debugging
-
       const result = await signIn('credentials', {
         document,
         password,
         redirect: false,
       });
-
-      console.log('Login result:', result); // Para debugging
 
       if (result?.error) {
         setError('Credenciales inválidas');
@@ -64,30 +51,39 @@ export default function LoginPage() {
         return;
       }
 
-      if (!result?.ok) {
-        setError('Error al iniciar sesión');
-        setIsLoading(false);
+      // Si el login fue exitoso, verificar el rol
+      if (result?.ok) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('document', document)
+          .single();
+
+        if (userData?.role) {
+          const path = userData.role === 'admin' ? '/admin' : '/consultant';
+          window.location.href = path; // Usar redirección directa
+        } else {
+          setError('Error al obtener el rol del usuario');
+          setIsLoading(false);
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
-    } finally {
       setIsLoading(false);
     }
   };
 
-  // Solo mostrar loading cuando sea necesario
-  if (isLoading) {
-    return <LoadingScreen message="Iniciando sesión..." />;
-  }
-
-  if (status === 'loading') {
-    return <LoadingScreen message="Verificando sesión..." />;
-  }
-
-  // Si ya está autenticado, no mostrar el formulario
-  if (status === 'authenticated') {
+  // Si ya está autenticado, mostrar mensaje y redirigir
+  if (status === 'authenticated' && session?.user?.role) {
+    const path = session.user.role === 'admin' ? '/admin' : '/consultant';
+    window.location.href = path;
     return <LoadingScreen message="Redirigiendo..." />;
+  }
+
+  // Loading states
+  if (status === 'loading' || isLoading) {
+    return <LoadingScreen message="Verificando..." />;
   }
 
   return (
