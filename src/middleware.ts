@@ -6,11 +6,12 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
+    console.log('Middleware path:', path); // Para debugging
+    console.log('Token:', token); // Para debugging
+
     // Lista de rutas públicas
     const publicPaths = ['/', '/login', '/catalogo'];
-    
     if (publicPaths.includes(path)) {
-      // Si está autenticado e intenta acceder al login, redirigir según rol
       if (path === '/login' && token) {
         const redirectPath = token.role === 'admin' ? '/admin' : '/consultant';
         return NextResponse.redirect(new URL(redirectPath, req.url));
@@ -20,12 +21,10 @@ export default withAuth(
 
     // Si no hay token, redirigir al login
     if (!token) {
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('from', path);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Proteger rutas por rol
+    // Protección de rutas por rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
       return NextResponse.redirect(new URL('/consultant', req.url));
     }
@@ -38,35 +37,13 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        const path = req.nextUrl.pathname;
-        
-        // Siempre permitir rutas públicas
-        if (path === '/' || path === '/catalogo') {
-          return true;
-        }
-
-        // Permitir acceso a login solo si no está autenticado
-        if (path === '/login') {
-          return !token;
-        }
-
-        // Para otras rutas, requerir token
-        return !!token;
-      },
+      authorized: ({ token }) => true, // Permitir que el middleware maneje la autorización
     },
   }
 );
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
-  ],
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ]
 };

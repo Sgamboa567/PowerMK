@@ -28,13 +28,14 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const theme = useTheme();
 
+  // Manejo de redirección basado en sesión
   useEffect(() => {
-    // Si el usuario ya está autenticado, redirigir solo una vez
     if (status === 'authenticated' && session?.user?.role) {
+      console.log('Session state:', { status, role: session.user.role }); // Para debugging
       const path = session.user.role === 'admin' ? '/admin' : '/consultant';
-      window.location.href = path; // Usar window.location para evitar ciclos
+      router.replace(path);
     }
-  }, [status, session]);
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,11 +48,15 @@ export default function LoginPage() {
         return;
       }
 
+      console.log('Attempting login with:', document); // Para debugging
+
       const result = await signIn('credentials', {
         document,
         password,
         redirect: false,
       });
+
+      console.log('Login result:', result); // Para debugging
 
       if (result?.error) {
         setError('Credenciales inválidas');
@@ -59,7 +64,6 @@ export default function LoginPage() {
         return;
       }
 
-      // No hacer redirección aquí, dejar que el useEffect se encargue
       if (!result?.ok) {
         setError('Error al iniciar sesión');
         setIsLoading(false);
@@ -67,13 +71,23 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Login error:', error);
       setError('Error al iniciar sesión');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Mostrar loading solo durante la autenticación inicial
+  // Solo mostrar loading cuando sea necesario
+  if (isLoading) {
+    return <LoadingScreen message="Iniciando sesión..." />;
+  }
+
   if (status === 'loading') {
     return <LoadingScreen message="Verificando sesión..." />;
+  }
+
+  // Si ya está autenticado, no mostrar el formulario
+  if (status === 'authenticated') {
+    return <LoadingScreen message="Redirigiendo..." />;
   }
 
   return (
