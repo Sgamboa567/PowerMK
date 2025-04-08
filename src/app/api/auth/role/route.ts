@@ -11,8 +11,7 @@ export async function POST(request: Request) {
       .eq('document', document)
       .single();
 
-    if (error) {
-      console.error('Error fetching user role:', error);
+    if (error || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

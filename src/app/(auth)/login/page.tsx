@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
-import { supabase } from '@/lib/supabase'; // Updated import path
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -27,6 +27,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const theme = useTheme();
+
+  // Manejar redirecciones basadas en la sesión
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role) {
+      const path = session.user.role === 'admin' ? '/admin' : '/consultant';
+      router.push(path);
+    }
+  }, [session, status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,19 +59,25 @@ export default function LoginPage() {
         return;
       }
 
-      // Si el login fue exitoso, verificar el rol
       if (result?.ok) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('document', document)
-          .single();
+        try {
+          const { data: userData, error: roleError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('document', document)
+            .single();
 
-        if (userData?.role) {
+          if (roleError || !userData?.role) {
+            throw new Error('Error al obtener el rol del usuario');
+          }
+
+          // Usar router.push en lugar de window.location
           const path = userData.role === 'admin' ? '/admin' : '/consultant';
-          window.location.href = path; // Usar redirección directa
-        } else {
-          setError('Error al obtener el rol del usuario');
+          router.push(path);
+          
+        } catch (error) {
+          console.error('Role verification error:', error);
+          setError('Error al verificar el rol del usuario');
           setIsLoading(false);
         }
       }
@@ -74,16 +88,14 @@ export default function LoginPage() {
     }
   };
 
-  // Si ya está autenticado, mostrar mensaje y redirigir
-  if (status === 'authenticated' && session?.user?.role) {
-    const path = session.user.role === 'admin' ? '/admin' : '/consultant';
-    window.location.href = path;
-    return <LoadingScreen message="Redirigiendo..." />;
+  // Mostrar loading mientras se verifica la sesión
+  if (status === 'loading' || isLoading) {
+    return <LoadingScreen message="Verificando credenciales..." />;
   }
 
-  // Loading states
-  if (status === 'loading' || isLoading) {
-    return <LoadingScreen message="Verificando..." />;
+  // Si ya está autenticado, mostrar loading mientras se redirige
+  if (status === 'authenticated' && session?.user?.role) {
+    return <LoadingScreen message="Iniciando sesión..." />;
   }
 
   return (

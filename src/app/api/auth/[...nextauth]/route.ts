@@ -27,7 +27,7 @@ const handler = NextAuth({
 
           return {
             id: user.id,
-            name: user.name || user.document,
+            name: user.name,
             email: user.email,
             role: user.role,
             document: user.document
@@ -39,10 +39,9 @@ const handler = NextAuth({
       }
     })
   ],
-  pages: {
-    signIn: '/login',
-    error: '/login',
-    signOut: '/login'
+  session: {
+    strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -58,17 +57,10 @@ const handler = NextAuth({
         session.user.document = token.document;
       }
       return session;
-    },
-    async redirect({ url, baseUrl }) {
-      // Manejar redirecciones personalizadas
-      if (url.startsWith(baseUrl)) return url;
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      return baseUrl;
     }
   },
-  session: {
-    strategy: 'jwt',
-    maxAge: 24 * 60 * 60 // 24 hours
+  pages: {
+    signIn: '/login',
   }
 });
 

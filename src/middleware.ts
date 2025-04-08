@@ -6,47 +6,37 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Lista de rutas públicas
-    const publicPaths = ['/', '/login', '/catalogo', '/api/auth/signin'];
-    
-    // Permitir rutas públicas sin verificación
-    if (publicPaths.includes(path)) {
+    // Rutas públicas no requieren autenticación
+    if (path === '/' || path === '/login' || path === '/catalogo') {
       return NextResponse.next();
     }
 
     // Si no hay token, redirigir al login
     if (!token) {
-      const loginUrl = new URL('/login', req.url);
-      // Guardar la URL original para redirigir después del login
-      loginUrl.searchParams.set('callbackUrl', path);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Verificar permisos por rol
+    // Proteger rutas por rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
-      return NextResponse.redirect(new URL('/', req.url));
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
+      authorized: ({ req, token }) => {
         const path = req.nextUrl.pathname;
         
-        // Permitir rutas públicas siempre
-        if (path === '/' || 
-            path === '/login' || 
-            path === '/catalogo' || 
-            path.startsWith('/api/auth')) {
+        // Permitir rutas públicas
+        if (path === '/' || path === '/login' || path === '/catalogo') {
           return true;
         }
         
-        // Para rutas protegidas, requerir token
         return !!token;
       },
     },
@@ -55,13 +45,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    /*
-     * Match all paths except:
-     * 1. /api/auth/* (NextAuth endpoints)
-     * 2. /_next/* (Next.js internals)
-     * 3. /static/* (static files)
-     * 4. /*.{ico,png,jpg} (static files)
-     */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.).*)' 
-  ],
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ]
 };
