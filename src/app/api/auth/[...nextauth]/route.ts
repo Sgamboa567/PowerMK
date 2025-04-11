@@ -23,7 +23,10 @@ const handler = NextAuth({
             .eq('password', credentials.password)
             .single();
 
-          if (error || !user) return null;
+          if (error || !user) {
+            console.error('Authorization error:', error);
+            return null;
+          }
 
           return {
             id: user.id,
@@ -39,10 +42,6 @@ const handler = NextAuth({
       }
     })
   ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -61,6 +60,10 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/login',
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 días
   }
 });
 

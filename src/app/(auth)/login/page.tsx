@@ -30,8 +30,12 @@ export default function LoginPage() {
 
   // Manejar redirecciones basadas en la sesión
   useEffect(() => {
+    console.log('Session status:', status); // Log para depuración
+    console.log('Session data:', session); // Log para depuración
+
     if (status === 'authenticated' && session?.user?.role) {
       const path = session.user.role === 'admin' ? '/admin' : '/consultant';
+      console.log('Redirecting to:', path); // Log para depuración
       router.push(path);
     }
   }, [session, status, router]);
@@ -42,7 +46,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log('Attempting login with document:', document); // Log para depuración
+
       if (userType === 'client') {
+        console.log('Redirecting client to catalog:', `/catalogo?document=${document}`); // Log para depuración
         router.push(`/catalogo?document=${document}`);
         return;
       }
@@ -53,6 +60,8 @@ export default function LoginPage() {
         redirect: false,
       });
 
+      console.log('Login result:', result); // Log para depuración
+
       if (result?.error) {
         setError('Credenciales inválidas');
         setIsLoading(false);
@@ -61,6 +70,7 @@ export default function LoginPage() {
 
       if (result?.ok) {
         try {
+          console.log('Fetching user role from Supabase...'); // Log para depuración
           const { data: userData, error: roleError } = await supabase
             .from('users')
             .select('role')
@@ -71,18 +81,17 @@ export default function LoginPage() {
             throw new Error('Error al obtener el rol del usuario');
           }
 
-          // Usar router.push en lugar de window.location
           const path = userData.role === 'admin' ? '/admin' : '/consultant';
+          console.log('Redirecting to:', path); // Log para depuración
           router.push(path);
-          
         } catch (error) {
-          console.error('Role verification error:', error);
+          console.error('Role verification error:', error); // Log para depuración
           setError('Error al verificar el rol del usuario');
           setIsLoading(false);
         }
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Login error:', error); // Log para depuración
       setError('Error al iniciar sesión');
       setIsLoading(false);
     }
@@ -90,11 +99,13 @@ export default function LoginPage() {
 
   // Mostrar loading mientras se verifica la sesión
   if (status === 'loading' || isLoading) {
+    console.log('Loading state active...'); // Log para depuración
     return <LoadingScreen message="Verificando credenciales..." />;
   }
 
   // Si ya está autenticado, mostrar loading mientras se redirige
   if (status === 'authenticated' && session?.user?.role) {
+    console.log('Authenticated, redirecting...'); // Log para depuración
     return <LoadingScreen message="Iniciando sesión..." />;
   }
 

@@ -6,22 +6,28 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Rutas públicas no requieren autenticación
+    console.log('Middleware - Path:', path); // Log para depuración
+    console.log('Middleware - Token:', token); // Log para depuración
+
+    // Rutas públicas
     if (path === '/' || path === '/login' || path === '/catalogo') {
       return NextResponse.next();
     }
 
     // Si no hay token, redirigir al login
     if (!token) {
+      console.log('Middleware - No token, redirecting to /login');
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Proteger rutas por rol
+    // Protección de rutas por rol
     if (path.startsWith('/admin') && token.role !== 'admin') {
+      console.log('Middleware - Unauthorized for admin, redirecting to /login');
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
     if (path.startsWith('/consultant') && token.role !== 'consultant') {
+      console.log('Middleware - Unauthorized for consultant, redirecting to /login');
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
@@ -29,22 +35,11 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ req, token }) => {
-        const path = req.nextUrl.pathname;
-        
-        // Permitir rutas públicas
-        if (path === '/' || path === '/login' || path === '/catalogo') {
-          return true;
-        }
-        
-        return !!token;
-      },
+      authorized: ({ token }) => !!token,
     },
   }
 );
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ]
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
