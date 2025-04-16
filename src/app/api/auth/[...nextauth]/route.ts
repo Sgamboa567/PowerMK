@@ -24,7 +24,6 @@ const handler = NextAuth({
             .single();
 
           if (error || !user) {
-            console.error('Authorization error:', error);
             return null;
           }
 
@@ -56,15 +55,21 @@ const handler = NextAuth({
         session.user.document = token.document;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle redirect logic
+      return url.startsWith(baseUrl) ? url : baseUrl;
     }
   },
   pages: {
     signIn: '/login',
+    // Add other custom pages if needed
   },
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 días
-  }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
 export { handler as GET, handler as POST };

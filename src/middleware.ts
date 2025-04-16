@@ -1,45 +1,38 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
+import { NextRequestWithAuth } from 'next-auth/middleware'
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const path = req.nextUrl.pathname;
+export default async function middleware(request: NextRequestWithAuth) {
+  const token = await getToken({ req: request })
+  
+  // Allow access to auth-related paths
+  const isAuthPath = request.nextUrl.pathname.startsWith('/api/auth') || 
+                    request.nextUrl.pathname.startsWith('/login') ||
+                    request.nextUrl.pathname.startsWith('/auth')
 
-    console.log('Middleware - Path:', path); // Log para depuración
-    console.log('Middleware - Token:', token); // Log para depuración
-
-    // Rutas públicas
-    if (path === '/' || path === '/login' || path === '/catalogo') {
-      return NextResponse.next();
-    }
-
-    // Si no hay token, redirigir al login
-    if (!token) {
-      console.log('Middleware - No token, redirecting to /login');
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    // Protección de rutas por rol
-    if (path.startsWith('/admin') && token.role !== 'admin') {
-      console.log('Middleware - Unauthorized for admin, redirecting to /login');
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    if (path.startsWith('/consultant') && token.role !== 'consultant') {
-      console.log('Middleware - Unauthorized for consultant, redirecting to /login');
-      return NextResponse.redirect(new URL('/login', req.url));
-    }
-
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
+  if (isAuthPath) {
+    return NextResponse.next()
   }
-);
+
+  // Protect all other routes
+  if (!token) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('callbackUrl', request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-};
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ]
+}

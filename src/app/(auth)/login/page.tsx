@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Box,
@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
-import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState<'client' | 'consultant'>('client');
@@ -25,6 +24,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
   const { data: session, status } = useSession();
   const theme = useTheme();
 
@@ -36,7 +37,7 @@ export default function LoginPage() {
     if (status === 'authenticated' && session?.user?.role) {
       const path = session.user.role === 'admin' ? '/admin' : '/consultant';
       console.log('Redirecting to:', path); // Log para depuración
-      router.push(path);
+      router.replace(path);
     }
   }, [session, status, router]);
 
@@ -48,16 +49,11 @@ export default function LoginPage() {
     try {
       console.log('Attempting login with document:', document); // Log para depuración
 
-      if (userType === 'client') {
-        console.log('Redirecting client to catalog:', `/catalogo?document=${document}`); // Log para depuración
-        router.push(`/catalogo?document=${document}`);
-        return;
-      }
-
       const result = await signIn('credentials', {
         document,
         password,
         redirect: false,
+        callbackUrl,
       });
 
       console.log('Login result:', result); // Log para depuración
@@ -69,44 +65,22 @@ export default function LoginPage() {
       }
 
       if (result?.ok) {
-        try {
-          console.log('Fetching user role from Supabase...'); // Log para depuración
-          const { data: userData, error: roleError } = await supabase
-            .from('users')
-            .select('role')
-            .eq('document', document)
-            .single();
-
-          if (roleError || !userData?.role) {
-            throw new Error('Error al obtener el rol del usuario');
-          }
-
-          const path = userData.role === 'admin' ? '/admin' : '/consultant';
-          console.log('Redirecting to:', path); // Log para depuración
-          router.push(path);
-        } catch (error) {
-          console.error('Role verification error:', error); // Log para depuración
-          setError('Error al verificar el rol del usuario');
-          setIsLoading(false);
-        }
+        router.replace(result.url || callbackUrl);
       }
     } catch (error) {
       console.error('Login error:', error); // Log para depuración
       setError('Error al iniciar sesión');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Mostrar loading mientras se verifica la sesión
   if (status === 'loading' || isLoading) {
-    console.log('Loading state active...'); // Log para depuración
     return <LoadingScreen message="Verificando credenciales..." />;
   }
 
-  // Si ya está autenticado, mostrar loading mientras se redirige
-  if (status === 'authenticated' && session?.user?.role) {
-    console.log('Authenticated, redirecting...'); // Log para depuración
-    return <LoadingScreen message="Iniciando sesión..." />;
+  if (status === 'authenticated') {
+    return <LoadingScreen message="Redirigiendo..." />;
   }
 
   return (
