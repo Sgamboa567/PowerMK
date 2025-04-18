@@ -9,6 +9,9 @@ export default async function middleware(request: NextRequestWithAuth) {
   const isPublicPath = request.nextUrl.pathname === '/' || 
                       request.nextUrl.pathname.startsWith('/api/auth') || 
                       request.nextUrl.pathname.startsWith('/login') ||
+                      request.nextUrl.pathname.startsWith('/about') ||
+                      request.nextUrl.pathname.startsWith('/contact') ||
+                      request.nextUrl.pathname.startsWith('/plans') ||
                       request.nextUrl.pathname.startsWith('/auth')
 
   if (isPublicPath) {

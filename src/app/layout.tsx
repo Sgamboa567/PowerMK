@@ -2,6 +2,8 @@
 
 import { SessionProvider } from 'next-auth/react'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { Providers } from '@/components/providers/Providers'
+import { Navbar } from '@/components/Navbar'
 
 export default function RootLayout({
   children,
@@ -9,13 +11,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <SessionProvider>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
-        </SessionProvider>
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   )

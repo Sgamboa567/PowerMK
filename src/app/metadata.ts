@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'PowerMK',
-  description: 'Mary Kay Management System',
+  description: 'Sistema de Gestión Mary Kay',
   icons: {
     icon: '/favicon.ico',
   },
