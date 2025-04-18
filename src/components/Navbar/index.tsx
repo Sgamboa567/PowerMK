@@ -118,12 +118,13 @@ export const Navbar = () => {
                   alt="PowerMK"
                   width={32}
                   height={32}
+                  priority
                   style={{
                     objectFit: 'contain',
                     filter: theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : 'none',
-                    transition: 'filter 0.3s ease'
+                    transition: 'filter 0.3s ease',
                   }}
-                  priority
+                  unoptimized
                 />
               </Box>
             </Link>

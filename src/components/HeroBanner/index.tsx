@@ -108,13 +108,15 @@ export const HeroBanner = () => {
       }}
     >
       {/* Modern geometric background */}
-      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.5 }}>
+      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: theme.palette.mode === 'dark' ? 0.5 : 0.8 }}>
         {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
             style={{
               position: 'absolute',
-              background: `linear-gradient(135deg, ${slides[currentSlide].color}15, ${slides[currentSlide].color}05)`,
+              background: theme.palette.mode === 'dark'
+                ? `linear-gradient(135deg, ${slides[currentSlide].color}15, ${slides[currentSlide].color}05)`
+                : `linear-gradient(135deg, ${slides[currentSlide].color}30, ${slides[currentSlide].color}10)`,
               clipPath: 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)',
               width: isMobile ? '150%' : '100%',
               height: isMobile ? '50%' : '100%',
@@ -173,12 +175,15 @@ export const HeroBanner = () => {
                 sx={{
                   fontSize: { xs: '2rem', sm: '3rem', md: '4.5rem' },
                   fontWeight: 800,
-                  background: `linear-gradient(135deg, ${slides[currentSlide].color} 0%, ${theme.palette.mode === 'dark' ? '#F5DADF' : '#FF4081'} 100%)`,
+                  background: theme.palette.mode === 'dark'
+                    ? `linear-gradient(135deg, ${slides[currentSlide].color} 0%, #F5DADF 100%)`
+                    : `linear-gradient(135deg, ${slides[currentSlide].color} 0%, #FF1493 100%)`,
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   mb: { xs: 2, sm: 3 },
                   letterSpacing: '-0.02em',
                   lineHeight: 1.2,
+                  filter: theme.palette.mode === 'dark' ? 'none' : 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))',
                 }}
               >
                 {slides[currentSlide].title}
