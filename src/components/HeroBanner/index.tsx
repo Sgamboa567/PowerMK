@@ -7,24 +7,49 @@ import { useSession } from 'next-auth/react';
 import { useTheme } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { keyframes } from '@mui/system';
+
+const glowAnimation = keyframes`
+  0% { opacity: 0.4 }
+  50% { opacity: 0.7 }
+  100% { opacity: 0.4 }
+`;
 
 const slides = [
   {
-    title: 'Bienvenida a PowerMK',
+    title: 'Bienvenido/a a PowerMK',
     subtitle: 'Tu plataforma integral de gestión Mary Kay',
     color: '#FF90B3'
   },
   {
     title: 'Gestiona tu Negocio',
-    subtitle: 'Controla inventario, ventas y clientes en un solo lugar',
+    subtitle: 'Controla inventario, ventas, calendario y clientes en un solo lugar',
     color: '#FF7AA2'
   },
   {
     title: 'Impulsa tu Éxito',
-    subtitle: 'Herramientas diseñadas para consultoras Mary Kay',
+    subtitle: 'Herramientas diseñadas para el modelo de negocios Mary Kay',
     color: '#FF6691'
   }
 ];
+
+const handleNavigation = (session: any) => {
+  if (!session) {
+    return '/login';
+  }
+
+  // Check user role and redirect accordingly
+  switch (session.user.role) {
+    case 'ADMIN':
+      return '/admin/dashboard';
+    case 'CONSULTANT':
+      return '/consultant/dashboard';
+    case 'DIRECTOR':
+      return '/director/dashboard';
+    default:
+      return '/dashboard';
+  }
+};
 
 export const HeroBanner = () => {
   const router = useRouter();
@@ -82,169 +107,187 @@ export const HeroBanner = () => {
           : 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(245,218,223,0.1) 100%)',
       }}
     >
-      {/* Interactive background effect */}
-      <motion.div
-        style={{
-          position: 'absolute',
-          width: isMobile ? 300 : 600,
-          height: isMobile ? 300 : 600,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${slides[currentSlide].color}20 0%, ${slides[currentSlide].color}00 70%)`,
-          x: cursorX,
-          y: cursorY,
-          translateX: '-50%',
-          translateY: '-50%',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-      />
-
-      {/* Animated background shapes */}
-      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-        {[...Array(5)].map((_, i) => (
+      {/* Modern geometric background */}
+      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.5 }}>
+        {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
             style={{
               position: 'absolute',
-              background: `${slides[currentSlide].color}10`,
-              borderRadius: '50%',
-              width: Math.random() * 300 + 100,
-              height: Math.random() * 300 + 100,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
+              background: `linear-gradient(135deg, ${slides[currentSlide].color}15, ${slides[currentSlide].color}05)`,
+              clipPath: 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)',
+              width: isMobile ? '150%' : '100%',
+              height: isMobile ? '50%' : '100%',
+              top: `${i * 33}%`,
+              left: `${i * -15}%`,
             }}
             animate={{
-              x: [0, Math.random() * 100 - 50],
-              y: [0, Math.random() * 100 - 50],
-              scale: [1, 1.2, 1],
+              x: [0, 50, 0],
+              y: [0, 30, 0],
             }}
             transition={{
-              duration: Math.random() * 10 + 10,
+              duration: 15 + i * 5,
               repeat: Infinity,
               repeatType: 'reverse',
+              ease: 'linear',
             }}
           />
         ))}
       </Box>
 
-      <Container maxWidth="lg" sx={{ position: 'relative', height: '100vh' }}>
-        <AnimatePresence initial={false} mode="wait">
+      <Container 
+        maxWidth="lg" 
+        sx={{ 
+          position: 'relative', 
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            custom={1}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 }
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
             style={{
-              position: 'absolute',
               width: '100%',
               height: '100%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              textAlign: 'center',
             }}
           >
-            <Box sx={{ textAlign: 'center', maxWidth: '800px' }}>
+            <Box 
+              sx={{ 
+                maxWidth: { xs: '95%', sm: '800px' }, 
+                margin: '0 auto',
+                px: { xs: 2, sm: 4 }
+              }}
+            >
+              <Typography
+                variant="h1"
+                sx={{
+                  fontSize: { xs: '2rem', sm: '3rem', md: '4.5rem' },
+                  fontWeight: 800,
+                  background: `linear-gradient(135deg, ${slides[currentSlide].color} 0%, ${theme.palette.mode === 'dark' ? '#F5DADF' : '#FF4081'} 100%)`,
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: { xs: 2, sm: 3 },
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.2,
+                }}
+              >
+                {slides[currentSlide].title}
+              </Typography>
+              <Typography
+                variant="h4"
+                sx={{
+                  color: theme.palette.mode === 'dark' ? '#F5DADF' : '#666',
+                  fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
+                  fontWeight: 500,
+                  mb: { xs: 3, sm: 5 },
+                  opacity: 0.9,
+                  letterSpacing: '0.02em',
+                  maxWidth: '90%',
+                  margin: '0 auto',
+                }}
+              >
+                {slides[currentSlide].subtitle}
+              </Typography>
+
               <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <Typography
-                  variant="h1"
-                  sx={{
-                    fontSize: { xs: '2.5rem', md: '4.5rem' },
-                    fontWeight: 800,
-                    background: `linear-gradient(135deg, ${slides[currentSlide].color} 0%, ${theme.palette.mode === 'dark' ? '#F5DADF' : '#FF4081'} 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    mb: 3,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {slides[currentSlide].title}
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    color: theme.palette.mode === 'dark' ? '#F5DADF' : '#666',
-                    fontSize: { xs: '1.2rem', md: '1.5rem' },
-                    fontWeight: 500,
-                    mb: 5,
-                    opacity: 0.9,
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  {slides[currentSlide].subtitle}
-                </Typography>
-
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
-                    <Button
-                      variant="contained"
-                      size="large"
-                      onClick={() => router.push(session ? '/dashboard' : '/login')}
-                      sx={{
+                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={() => router.push(handleNavigation(session))}
+                    sx={{
+                      bgcolor: slides[currentSlide].color,
+                      backdropFilter: 'blur(10px)',
+                      color: 'white',
+                      fontSize: { xs: '1rem', sm: '1.1rem' },
+                      py: { xs: 1.5, sm: 2 },
+                      px: { xs: 3, sm: 4 },
+                      borderRadius: '8px',
+                      textTransform: 'none',
+                      transition: 'all 0.4s ease',
+                      '&:hover': {
                         bgcolor: slides[currentSlide].color,
-                        color: 'white',
-                        fontSize: '1.1rem',
-                        py: 2,
-                        px: 4,
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        transition: 'all 0.3s ease',
-                        boxShadow: theme.palette.mode === 'dark' 
-                          ? '0 8px 32px rgba(245,218,223,0.2)'
-                          : '0 8px 32px rgba(255,64,129,0.2)',
-                        '&:hover': {
-                          bgcolor: slides[currentSlide].color,
-                          transform: 'translateY(-3px)',
-                          boxShadow: '0 12px 40px rgba(255,64,129,0.3)',
-                        },
-                      }}
-                      endIcon={<ArrowForwardIcon />}
-                    >
-                      Comenzar ahora
-                    </Button>
-                  </Box>
-                </motion.div>
+                        transform: 'translateY(-3px)',
+                        boxShadow: `0 12px 40px ${slides[currentSlide].color}40`,
+                      },
+                    }}
+                    endIcon={
+                      <ArrowForwardIcon sx={{ transition: 'transform 0.3s ease' }} />
+                    }
+                  >
+                    Comenzar ahora
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => router.push('/about')}
+                    sx={{
+                      borderColor: slides[currentSlide].color,
+                      color: theme.palette.mode === 'dark' ? '#F5DADF' : '#666',
+                      fontSize: { xs: '1rem', sm: '1.1rem' },
+                      py: { xs: 1.5, sm: 2 },
+                      px: { xs: 3, sm: 4 },
+                      borderRadius: '8px',
+                      textTransform: 'none',
+                      transition: 'all 0.4s ease',
+                      '&:hover': {
+                        borderColor: slides[currentSlide].color,
+                        bgcolor: 'transparent',
+                        transform: 'translateY(-3px)',
+                        boxShadow: `0 12px 40px ${slides[currentSlide].color}20`,
+                      },
+                    }}
+                  >
+                    Conocer más
+                  </Button>
+                </Box>
               </motion.div>
             </Box>
           </motion.div>
         </AnimatePresence>
 
-        {/* Slide indicators */}
+        {/* Modern slide indicators */}
         <Box
           sx={{
             position: 'absolute',
-            bottom: 40,
+            bottom: { xs: 20, sm: 40 },
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
-            gap: 2,
+            gap: 1,
           }}
         >
           {slides.map((_, index) => (
             <motion.div
               key={index}
+              onClick={() => setCurrentSlide(index)}
               style={{
                 cursor: 'pointer',
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                backgroundColor: currentSlide === index ? slides[currentSlide].color : '#F5DADF50',
+                height: '4px',
+                width: currentSlide === index ? '24px' : '12px',
+                backgroundColor: currentSlide === index ? slides[currentSlide].color : '#F5DADF30',
+                borderRadius: '2px',
               }}
-              whileHover={{ scale: 1.2 }}
-              onClick={() => setCurrentSlide(index)}
+              whileHover={{ scale: 1.1 }}
+              animate={{
+                width: currentSlide === index ? '24px' : '12px',
+                transition: { duration: 0.3 }
+              }}
             />
           ))}
         </Box>
