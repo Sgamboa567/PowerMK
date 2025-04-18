@@ -3,8 +3,13 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ['localhost'],
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
   async headers() {
     return [
@@ -18,11 +23,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
   },
 };
 
