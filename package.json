@@ -19,12 +19,14 @@
     "@supabase/supabase-js": "^2.49.4",
     "chart.js": "^4.4.8",
     "date-fns": "^4.1.0",
+    "framer-motion": "^12.7.4",
     "next": "14.0.0",
     "next-auth": "^4.24.11",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^18.2.0",
-    "react-pdf": "^5.0.0"
+    "react-pdf": "^5.0.0",
+    "swiper": "^11.2.6"
   },
   "devDependencies": {
     "eslint": "^7.0.0",
