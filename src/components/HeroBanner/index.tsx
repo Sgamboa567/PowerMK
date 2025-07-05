@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Container, Typography, useMediaQuery } from '@mui/material';
+import { Box, Button, Container, Typography, useMediaQuery, CircularProgress } from '@mui/material';
 import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -8,6 +8,7 @@ import { useTheme } from '@mui/material/styles';
 import { useState, useEffect } from 'react';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { keyframes } from '@mui/system';
+import { supabase } from '@/lib/supabase'; // Asegúrate de que esta importación esté disponible
 
 const glowAnimation = keyframes`
   0% { opacity: 0.4 }
@@ -33,21 +34,68 @@ const slides = [
   }
 ];
 
-const handleNavigation = (session: any) => {
+// Función actualizada para manejar la navegación correctamente
+const handleNavigation = async (session: any) => {
   if (!session) {
+    console.log("No hay sesión activa");
     return '/login';
   }
 
-  // Check user role and redirect accordingly
-  switch (session.user.role) {
-    case 'ADMIN':
-      return '/admin/dashboard';
-    case 'CONSULTANT':
-      return '/consultant/dashboard';
-    case 'DIRECTOR':
-      return '/director/dashboard';
-    default:
-      return '/dashboard';
+  console.log("Objeto completo de sesión:", JSON.stringify(session, null, 2));
+  
+  // El ID puede estar en diferentes ubicaciones dependiendo de cómo configuraste NextAuth
+  const userId = session.user?.id || session.sub || session.user?.sub;
+  
+  if (!userId) {
+    console.error("No se pudo encontrar el ID del usuario en la sesión");
+    return '/login';
+  }
+
+  try {
+    // Obtener información completa del usuario desde Supabase
+    const { data, error } = await supabase
+      .from('users')
+      .select('role, subscription_status, subscription_end_date')
+      .eq('id', userId)
+      .single();
+
+    console.log("Datos obtenidos de Supabase:", data);
+
+    if (error) throw error;
+
+    // Verificar rol y estado de suscripción
+    const isAdmin = data?.role?.toLowerCase() === 'admin';
+    const hasActiveSubscription = 
+      data?.subscription_status === 'active' && 
+      (data?.subscription_end_date ? new Date(data.subscription_end_date) > new Date() : true);
+
+    console.log("Análisis de rol:", { 
+      userId, 
+      role: data?.role, 
+      isAdmin,
+      hasActiveSubscription 
+    });
+
+    // Redirigir según el rol y estado de suscripción
+    if (isAdmin) {
+      return '/admin';
+    } else if (data?.role?.toLowerCase() === 'consultant' || data?.role?.toLowerCase() === 'director') {
+      // Si es consultor o director, verificar suscripción
+      if (hasActiveSubscription) {
+        return data.role.toLowerCase() === 'consultant' 
+          ? '/consultant'
+          : '/director';
+      } else {
+        return '/payment';
+      }
+    } else {
+      return '/';
+    }
+  } catch (error) {
+    console.error('Error verificando el rol del usuario:', error);
+    console.log('Session user ID:', userId);
+    console.log('Session info:', session);
+    return '/';
   }
 };
 
@@ -61,6 +109,8 @@ export const HeroBanner = () => {
   const mouseY = useMotionValue(0);
   const cursorX = useSpring(mouseX, { damping: 25, stiffness: 150 });
   const cursorY = useSpring(mouseY, { damping: 25, stiffness: 150 });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [navigationUrl, setNavigationUrl] = useState('');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -78,6 +128,24 @@ export const HeroBanner = () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
+
+  // Manejar el clic en "Comenzar ahora"
+  const handleStartNow = async () => {
+    setIsProcessing(true);
+    try {
+      console.log("Iniciando navegación con sesión:", session?.user?.email);
+      const url = await handleNavigation(session);
+      console.log("URL de destino:", url);
+      setNavigationUrl(url);
+      router.push(url);
+    } catch (error) {
+      console.error("Error durante la navegación:", error);
+      // Fallback en caso de error, redireccionar al login
+      router.push('/login');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const variants = {
     enter: (direction: number) => ({
@@ -213,7 +281,8 @@ export const HeroBanner = () => {
                   <Button
                     variant="contained"
                     size="large"
-                    onClick={() => router.push(handleNavigation(session))}
+                    onClick={handleStartNow}
+                    disabled={isProcessing}
                     sx={{
                       bgcolor: slides[currentSlide].color,
                       backdropFilter: 'blur(10px)',
@@ -231,10 +300,14 @@ export const HeroBanner = () => {
                       },
                     }}
                     endIcon={
-                      <ArrowForwardIcon sx={{ transition: 'transform 0.3s ease' }} />
+                      isProcessing ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <ArrowForwardIcon sx={{ transition: 'transform 0.3s ease' }} />
+                      )
                     }
                   >
-                    Comenzar ahora
+                    {isProcessing ? 'Procesando...' : 'Comenzar ahora'}
                   </Button>
 
                   <Button

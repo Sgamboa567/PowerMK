@@ -15,7 +15,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  useTheme,
   useMediaQuery,
   Divider,
 } from '@mui/material';
@@ -24,21 +23,18 @@ import { useSession, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useThemeContext } from '@/components/providers/ThemeProvider';
+import { useTheme as useMuiTheme } from '@mui/material/styles';
+import { useTheme } from '@/components/ThemeProvider';
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-
-// Add new icon imports
-import HomeIcon from '@mui/icons-material/Home';
 import InfoIcon from '@mui/icons-material/Info';
 import ContactsIcon from '@mui/icons-material/Contacts';
 import CategoryIcon from '@mui/icons-material/Category';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import WorkIcon from '@mui/icons-material/Work';
 
 const navItems = [
   { title: 'About', path: '/about', icon: <InfoIcon /> },
@@ -47,15 +43,21 @@ const navItems = [
   { title: 'Promociones', path: '/promotions', icon: <LocalOfferIcon /> },
 ];
 
+// Update the Navbar component to check if we're in the consultant/admin dashboard area
 export const Navbar = () => {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { toggleTheme, isDarkMode } = useThemeContext();
-  const theme = useTheme();
+  const { toggleTheme, isDarkMode } = useTheme();
+  const theme = useMuiTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const router = useRouter();
+
+  // Add the missing handleDrawerToggle function
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -70,9 +72,34 @@ export const Navbar = () => {
     await signOut({ callbackUrl: '/' });
   };
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+  // Actualiza la función para redirigir correctamente según el rol
+  const handleDashboardClick = () => {
+    handleMenuClose();
+    
+    if (!session?.user?.role) {
+      console.error("No se encontró rol en la sesión del usuario");
+      return;
+    }
+    
+    // Redirigir según el rol del usuario
+    const role = session.user.role.toLowerCase();
+    if (role === 'admin') {
+      router.push('/admin');
+    } else if (role === 'consultant' || role === 'director') {
+      router.push('/consultant');
+    } else {
+      // Si es otro tipo de usuario, redirigir a una página genérica
+      router.push('/dashboard');
+    }
   };
+
+  // Check if current path should hide navbar
+  const isHiddenNavbarPath = pathname.startsWith('/consultant') || pathname.startsWith('/admin');
+
+  // Don't render navbar on consultant or admin dashboard pages
+  if (isHiddenNavbarPath) {
+    return null;
+  }
 
   return (
     <Box
@@ -202,22 +229,48 @@ export const Navbar = () => {
                   PaperProps={{
                     sx: {
                       mt: 1,
+                      minWidth: 200,
                       background: theme.palette.mode === 'dark'
                         ? 'rgba(26,26,26,0.95)'
                         : 'rgba(255,255,255,0.95)',
                       backdropFilter: 'blur(10px)',
+                      borderRadius: 2,
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
                     }
                   }}
                 >
-                  <MenuItem onClick={() => {
-                    handleMenuClose();
-                    router.push('/dashboard');
-                  }}>
-                    <AccountCircleIcon sx={{ mr: 1 }} />
-                    Dashboard
+                  {/* Información del usuario */}
+                  <Box sx={{ px: 2, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` }}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {session?.user?.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {session?.user?.email}
+                    </Typography>
+                    <Typography variant="caption" sx={{ 
+                      display: 'inline-block',
+                      mt: 0.5,
+                      px: 1,
+                      py: 0.25,
+                      bgcolor: '#FF90B3',
+                      color: 'white',
+                      borderRadius: 1,
+                      fontWeight: 'bold'
+                    }}>
+                      {session?.user?.role === 'admin' ? 'Administrador' : 
+                       session?.user?.role === 'consultant' ? 'Consultora' : 
+                       session?.user?.role === 'director' ? 'Directora' : 'Usuario'}
+                    </Typography>
+                  </Box>
+                  
+                  {/* Opciones del menú */}
+                  <MenuItem onClick={handleDashboardClick}>
+                    <AccountCircleIcon sx={{ mr: 1, fontSize: 20 }} />
+                    Mi Dashboard
                   </MenuItem>
+                  
                   <MenuItem onClick={handleLogout}>
-                    <LogoutIcon sx={{ mr: 1 }} />
+                    <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
                     Cerrar sesión
                   </MenuItem>
                 </Menu>
@@ -233,7 +286,15 @@ export const Navbar = () => {
                 if (!session) {
                   router.push('/login');
                 } else {
-                  router.push('/cart');
+                  // Si está autenticado, verificar el rol para redirigir adecuadamente
+                  const role = session.user?.role?.toLowerCase();
+                  if (role === 'admin') {
+                    router.push('/admin');
+                  } else if (role === 'consultant' || role === 'director') {
+                    router.push('/consultant/sales'); // O la ruta específica para ventas/carrito
+                  } else {
+                    router.push('/cart');
+                  }
                 }
               }}
               sx={{ 
@@ -251,7 +312,8 @@ export const Navbar = () => {
 
             <IconButton
               size="small"
-              onClick={toggleTheme}
+              onClick={(e) => toggleTheme(e)} // Pass the event to capture click position
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
               sx={{ 
                 color: theme.palette.text.primary,
                 p: 1,
@@ -259,6 +321,7 @@ export const Navbar = () => {
                   bgcolor: theme.palette.mode === 'dark'
                     ? 'rgba(255,255,255,0.1)'
                     : 'rgba(0,0,0,0.05)',
+                  color: '#F5DADF',
                 }
               }}
             >

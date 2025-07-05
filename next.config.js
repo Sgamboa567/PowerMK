@@ -1,15 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
-  images: {
-    unoptimized: true,
-    remotePatterns: [
+  experimental: {
+    serverActions: true,
+  },
+  // Añadir esta configuración para mejor manejo de rutas API
+  async headers() {
+    return [
       {
-        protocol: 'https',
-        hostname: '**',
+        // Aplicar estos encabezados a todas las rutas
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, must-revalidate',
+          },
+        ],
       },
-    ],
+    ];
   },
 };
 

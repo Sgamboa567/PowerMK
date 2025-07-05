@@ -5,7 +5,8 @@ import { HeroBanner } from '@/components/HeroBanner';
 import { Footer } from '@/components/Footer';
 import { useTheme } from '@mui/material/styles';
 
-export default function Home() {
+// Remove the metadata export from this client component
+export default function HomePage() {
   const theme = useTheme();
 
   return (
