@@ -1,24 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
   experimental: {
-    serverActions: true,
+    // Removemos serverActions ya que ahora está habilitado por defecto
   },
-  // Añadir esta configuración para mejor manejo de rutas API
-  async headers() {
-    return [
-      {
-        // Aplicar estos encabezados a todas las rutas
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, must-revalidate',
-          },
-        ],
-      },
-    ];
-  },
-};
+  images: {
+    domains: ['localhost', 'your-supabase-project.supabase.co'],
+  }
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig
