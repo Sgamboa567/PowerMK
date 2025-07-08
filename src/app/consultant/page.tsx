@@ -43,6 +43,40 @@ const COLORS = {
   lightGray: '#f4f4f4'
 } as const;
 
+// Definir tipos para las variantes
+import type { Variants } from 'framer-motion';
+
+// Definir las variantes de animación correctamente
+const containerVariants: Variants = {
+  hidden: { 
+    opacity: 0 
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      when: "beforeChildren",
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { 
+    opacity: 0, 
+    y: 20 
+  },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      duration: 0.5,
+      bounce: 0.3
+    }
+  }
+};
+
 export default function ConsultantDashboard() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -60,31 +94,6 @@ export default function ConsultantDashboard() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-
-  // Animaciones compartidas
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.5,
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100
-      }
-    }
-  };
 
   // Efecto mejorado para cargar datos
   useEffect(() => {
@@ -181,13 +190,7 @@ export default function ConsultantDashboard() {
   ];
 
   return (
-    <Container 
-      maxWidth="xl" 
-      sx={{ 
-        py: 4,
-        px: { xs: 2, md: 4 }
-      }}
-    >
+    <Container maxWidth="xl">
       <Box
         component={motion.div}
         variants={containerVariants}
@@ -195,7 +198,8 @@ export default function ConsultantDashboard() {
         animate="visible"
         sx={{
           minHeight: '100vh',
-          width: '100%' // Asegura que ocupe todo el ancho disponible
+          py: 6,
+          px: { xs: 2, sm: 3, md: 4 },
         }}
       >
         {/* Header con información de la consultora */}
@@ -271,7 +275,7 @@ export default function ConsultantDashboard() {
         <Grid container spacing={4}>
           {/* KPIs y Métricas */}
           <Grid item xs={12}>
-            <Box mb={4}> {/* Añadido margin bottom */}
+            <Box mb={4}>
               <motion.div variants={itemVariants}>
                 <KPISummary stats={stats} />
               </motion.div>
