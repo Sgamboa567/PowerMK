@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react';
-import { InventoryTable } from '@/components/consultant/Inventory/InventoryTable';
+import { InventoryTable } from '@/components/consultant/inventory/InventoryTable';
 import { 
   Box, 
   Typography, 
