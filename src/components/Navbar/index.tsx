@@ -24,7 +24,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
-import { useTheme } from '@/components/ThemeProvider';
+import { useThemeContext } from '@/components/providers/ThemeProvider';
+
 import MenuIcon from '@mui/icons-material/Menu';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -49,7 +50,7 @@ export const Navbar = () => {
   const pathname = usePathname();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { toggleTheme, isDarkMode } = useTheme();
+  const { toggleTheme, isDarkMode } = useThemeContext();
   const theme = useMuiTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const router = useRouter();
@@ -94,7 +95,9 @@ export const Navbar = () => {
   };
 
   // Check if current path should hide navbar
-  const isHiddenNavbarPath = pathname.startsWith('/consultant') || pathname.startsWith('/admin');
+  const isHiddenNavbarPath = 
+    (pathname.startsWith('/consultant') || pathname.startsWith('/admin')) &&
+    pathname !== '/';
 
   // Don't render navbar on consultant or admin dashboard pages
   if (isHiddenNavbarPath) {
@@ -312,7 +315,7 @@ export const Navbar = () => {
 
             <IconButton
               size="small"
-              onClick={(e) => toggleTheme(e)} // Pass the event to capture click position
+              onClick={(e) => toggleTheme(e)} // Asegúrate de pasar el evento
               aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
               sx={{ 
                 color: theme.palette.text.primary,

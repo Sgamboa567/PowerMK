@@ -19,6 +19,7 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { LoadingScreen } from '@/components/common/LoadingScreen';
 import { motion } from 'framer-motion';
+import { useThemeContext } from '@/components/providers/ThemeProvider';
 
 const BRAND_COLOR = '#FF90B3'; // Define brand color to match other pages
 
@@ -34,6 +35,7 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { toggleTheme, isDarkMode } = useThemeContext();
 
   // Manejar redirecciones basadas en la sesión
   useEffect(() => {
@@ -141,32 +143,34 @@ export default function LoginPage() {
             minHeight: '80vh',
           }}
         >
-          <motion.div
+            <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-          >
+            style={{
+              marginBottom: '32px',
+              cursor: 'pointer',
+              textAlign: 'center',
+              transition: 'color 0.3s ease',
+            }}
+            whileHover={{
+              color: theme.palette.mode === 'dark' ? '#ffffff' : '#F5DADF',
+            }}
+            >
             <Link href="/" style={{ textDecoration: 'none' }}>
               <Typography
-                variant="h2"
-                component="h1"
-                sx={{
-                  fontWeight: 700,
-                  color: theme.palette.mode === 'dark' ? '#F5DADF' : '#000000',
-                  fontSize: { xs: '2.5rem', md: '3.5rem' },
-                  mb: 4,
-                  transition: 'color 0.3s ease',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  '&:hover': {
-                    color: theme.palette.mode === 'dark' ? '#ffffff' : '#F5DADF',
-                  }
-                }}
+              variant="h2"
+              component="h1"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.mode === 'dark' ? '#F5DADF' : '#000000',
+                fontSize: { xs: '2.5rem', md: '3.5rem' },
+              }}
               >
-                PowerMK
+              PowerMK
               </Typography>
             </Link>
-          </motion.div>
+            </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

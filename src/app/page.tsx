@@ -3,9 +3,9 @@
 import { Box } from '@mui/material';
 import { HeroBanner } from '@/components/HeroBanner';
 import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar';
 import { useTheme } from '@mui/material/styles';
 
-// Remove the metadata export from this client component
 export default function HomePage() {
   const theme = useTheme();
 
@@ -17,6 +17,7 @@ export default function HomePage() {
         flexDirection: 'column',
       }}
     >
+      <Navbar />
       <HeroBanner />
       <Footer />
     </Box>
