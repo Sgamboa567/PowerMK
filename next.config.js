@@ -11,8 +11,6 @@ const nextConfig = {
   swcMinify: true,
   poweredByHeader: false,
   reactStrictMode: true,
-  // Ajustes específicos para Vercel
-  output: 'standalone',
   // Optimizaciones
   optimizeFonts: true,
   compiler: {
