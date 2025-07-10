@@ -121,16 +121,32 @@ export default function SalesPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <SalesTable userId={session?.user?.id} key={refresh} />
+          {session?.user?.id ? (
+            <SalesTable userId={session.user.id} key={refresh} />
+          ) : (
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 4, 
+                textAlign: 'center',
+                bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'
+              }}
+            >
+              <Typography variant="h6" color="text.secondary">
+                Inicie sesión para ver sus ventas
+              </Typography>
+            </Paper>
+          )}
         </motion.div>
 
         {/* Modal de nueva venta */}
-        <SaleForm
-          open={open}
-          onClose={() => setOpen(false)}
-          onSaleAdded={handleSaleAdded}
-          userId={session?.user?.id}
-        />
+        {session?.user?.id && (
+          <SaleForm
+            open={open}
+            onClose={() => setOpen(false)}
+            onSaleAdded={handleSaleAdded}
+          />
+        )}
       </Box>
     </Container>
   );
