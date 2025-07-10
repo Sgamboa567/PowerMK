@@ -7,11 +7,11 @@ import { supabase } from '@/lib/supabase';
 
 // Este componente verifica periódicamente la suscripción mientras el usuario usa la app
 export const SubscriptionChecker = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user?.id || status !== 'authenticated') return;
     
     const checkSubscription = async () => {
       try {
@@ -21,18 +21,20 @@ export const SubscriptionChecker = () => {
           .eq('id', session.user.id)
           .single();
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error en verificación:', error);
+          return;
+        }
         
-        const isAdmin = data.role === 'admin';
+        const isAdmin = data?.role === 'admin';
         
-        // Si no es admin y la suscripción expiró, redirigir a la página de pago
-        if (!isAdmin && 
+        if (!isAdmin && data && 
             (data.subscription_status !== 'active' || 
              new Date(data.subscription_end_date) <= new Date())) {
           router.push('/payment');
         }
       } catch (err) {
-        console.error('Error verificando suscripción:', err);
+        console.error('Error en verificación de suscripción:', err);
       }
     };
     
@@ -43,7 +45,7 @@ export const SubscriptionChecker = () => {
     checkSubscription();
     
     return () => clearInterval(intervalId);
-  }, [session, router]);
+  }, [session?.user?.id, status, router]);
   
   return null; // Este componente no renderiza nada
 };

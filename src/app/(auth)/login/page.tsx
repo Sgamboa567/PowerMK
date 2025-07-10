@@ -55,29 +55,45 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log('Attempting login with document:', document);
-
-      const result = await signIn('credentials', {
-        document,
-        password,
-        redirect: false,
-        callbackUrl,
-      });
-
-      console.log('Login result:', result);
-
-      if (result?.error) {
-        setError('Credenciales inválidas');
+      if (!document.trim()) {
+        setError('Por favor, ingrese su número de documento');
         setIsLoading(false);
         return;
       }
 
+      if (userType === 'consultant' && !password) {
+        setError('Por favor, ingrese su contraseña');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log(`Intentando login: documento=${document}, userType=${userType}`);
+
+      const result = await signIn('credentials', {
+        document: document.trim(),
+        password,
+        redirect: false,
+      });
+
+      console.log('Resultado del login:', result);
+
+      if (result?.error) {
+        console.error('Error de autenticación:', result.error);
+        setError('Documento o contraseña incorrectos');
+        return;
+      }
+
       if (result?.ok) {
-        router.replace(result.url || callbackUrl);
+        console.log('Login exitoso, redirigiendo...');
+        const redirectTo = callbackUrl === '/' ? 
+          (userType === 'client' ? '/' : '/consultant') : 
+          callbackUrl;
+        
+        router.push(redirectTo);
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Error al iniciar sesión');
+      console.error('Error inesperado en login:', error);
+      setError('Ha ocurrido un error durante el inicio de sesión');
     } finally {
       setIsLoading(false);
     }

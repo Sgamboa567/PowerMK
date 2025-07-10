@@ -1,9 +1,7 @@
 import { Metadata } from 'next';
 import { metadata } from './metadata';
-import { Navbar } from '@/components/Navbar'
-import { Providers } from '@/components/providers/Providers'
-import { SubscriptionChecker } from '@/components/SubscriptionChecker'
-import { ThemeProvider } from '@/components/ThemeProvider'
+import { Providers } from '@/components/providers/Providers';
+import { SubscriptionChecker } from '@/components/SubscriptionChecker';
 
 export { metadata };
 
@@ -16,12 +14,10 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body>
         <Providers>
-          <ThemeProvider>
-            <SubscriptionChecker />
-            {children}
-          </ThemeProvider>
+          {children}
+          <SubscriptionChecker />
         </Providers>
       </body>
     </html>
-  )
+  );
 }

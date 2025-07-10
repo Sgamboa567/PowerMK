@@ -113,13 +113,16 @@ export default function ClientsPage() {
           </Button>
         </Paper>
 
-        {/* Tabla de clientes con animación */}
+        {/* Tabla de clientes con animación - CORREGIDO: Pasar props addOpen y setAddOpen */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <ClientsTable />
+          <ClientsTable 
+            addOpen={addOpen} 
+            setAddOpen={setAddOpen} 
+          />
         </motion.div>
       </Box>
     </Container>

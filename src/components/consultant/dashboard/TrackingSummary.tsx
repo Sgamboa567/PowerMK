@@ -51,7 +51,7 @@ export function TrackingSummary() {
             name,
             phone,
             birthday,
-            sales (
+            sales:fk_sales_client (
               created_at
             )
           `)

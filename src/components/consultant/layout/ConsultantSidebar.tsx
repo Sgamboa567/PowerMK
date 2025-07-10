@@ -1,21 +1,19 @@
 'use client'
-import { motion } from 'framer-motion'; // Add this import
+import { motion } from 'framer-motion';
 import {
-  Avatar,
   Box,
-  Button,
-  Collapse,
-  Divider,
   Drawer,
   IconButton,
+  useTheme,
+  useMediaQuery,
+  Avatar,         // Added Avatar import
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Tooltip,
   Typography,
-  useMediaQuery,
-  useTheme,
+  Divider,
+  Collapse
 } from '@mui/material';
 import {
   AccountCircle,
@@ -81,15 +79,9 @@ export default function ConsultantSidebar() {
 
   const DrawerContent = useCallback(
     ({ onClose, isMobile }: DrawerContentProps) => {
-      const theme = useTheme();
-      const { data: session } = useSession();
-      const router = useRouter();
-      const pathname = usePathname();
-      const { toggleTheme, isDarkMode } = useThemeContext();
-
       return (
-        <Box sx={{ height: '100%', overflow: 'auto' }}>
-          {/* Perfil con animaciones mejoradas */}
+        <Box sx={{ height: '100%', overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {/* Perfil Header */}
           <Box
             component={motion.div}
             initial={{ opacity: 0, y: -20 }}
@@ -106,10 +98,7 @@ export default function ConsultantSidebar() {
                   : 'linear-gradient(135deg, rgba(255,144,179,0.05), transparent)',
             }}
           >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: 'spring' }}
-            >
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ type: 'spring' }}>
               <Avatar
                 sx={{
                   width: 72,
@@ -126,72 +115,17 @@ export default function ConsultantSidebar() {
               </Avatar>
             </motion.div>
 
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 600,
-                background: `linear-gradient(45deg, ${BRAND_COLOR}, #FF6B98)`,
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                color: 'transparent',
-              }}
-            >
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
               {session?.user?.name || 'Consultora'}
             </Typography>
 
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               {session?.user?.email}
             </Typography>
-
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<AccountCircle />}
-              onClick={() => {
-                router.push('/consultant/account');
-                onClose?.();
-              }}
-              sx={{
-                borderColor: BRAND_COLOR,
-                color: BRAND_COLOR,
-                fontWeight: 600,
-                px: 3,
-                py: 1,
-                borderRadius: 2,
-                backdropFilter: 'blur(4px)',
-                '&:hover': {
-                  borderColor: '#e57a9e',
-                  bgcolor: `${BRAND_COLOR}15`,
-                  transform: 'translateY(-2px)',
-                  boxShadow: `0 4px 12px ${BRAND_COLOR}30`,
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              Mi cuenta
-            </Button>
-
-            {/* Toggle de tema */}
-            <IconButton
-              onClick={toggleTheme}
-              sx={{
-                mt: 2,
-                color: theme.palette.mode === 'dark' ? '#FFF' : '#000',
-                '&:hover': {
-                  bgcolor:
-                    theme.palette.mode === 'dark'
-                      ? 'rgba(255,255,255,0.1)'
-                      : 'rgba(0,0,0,0.05)',
-                },
-              }}
-            >
-              {isDarkMode ? <LightMode /> : <DarkMode />}
-            </IconButton>
 
             <Typography
               variant="caption"
               sx={{
-                mt: 1,
                 px: 1.5,
                 py: 0.5,
                 bgcolor: BRAND_COLOR,
@@ -208,8 +142,8 @@ export default function ConsultantSidebar() {
 
           <Divider sx={{ opacity: 0.6 }} />
 
-          {/* Menú principal con animaciones */}
-          <List sx={{ px: 2, py: 1 }}>
+          {/* Menú principal */}
+          <List sx={{ px: 2, py: 1, flexGrow: 1 }}>
             {menuItems.map((item, index) => (
               <motion.div
                 key={item.text}
@@ -235,70 +169,76 @@ export default function ConsultantSidebar() {
                     },
                     transition: 'all 0.2s ease',
                   }}
-                  aria-current={pathname === item.path ? 'page' : undefined}
                 >
                   <ListItemIcon sx={{ color: BRAND_COLOR, minWidth: 40 }}>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      sx: { fontWeight: pathname === item.path ? 600 : 400 },
-                    }}
-                  />
+                  <ListItemText primary={item.text} />
                 </ListItem>
               </motion.div>
             ))}
+          </List>
 
-            {/* Submenú de configuración */}
+          <Divider sx={{ opacity: 0.6 }} />
+
+          {/* Configuración y Tema */}
+          <List sx={{ px: 2, py: 1 }}>
             <ListItem
               button
-              onClick={() => setOpenConfig((v) => !v)}
-              sx={{ mx: 1, borderRadius: 1 }}
-              aria-expanded={openConfig}
-              aria-controls="submenu-config"
+              onClick={() => setOpenConfig(prev => !prev)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+              }}
             >
-              <ListItemIcon sx={{ color: '#FF90B3', minWidth: 40 }}>
+              <ListItemIcon sx={{ color: BRAND_COLOR, minWidth: 40 }}>
                 <Settings />
               </ListItemIcon>
               <ListItemText primary="Configuración" />
               {openConfig ? <ExpandLess /> : <ExpandMore />}
             </ListItem>
+
             <Collapse in={openConfig} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding id="submenu-config">
+              <List component="div" disablePadding>
                 <ListItem
                   button
-                  sx={{ pl: 6, borderRadius: 1 }}
                   onClick={handleProfile}
+                  sx={{ pl: 4, borderRadius: 2 }}
                 >
-                  <ListItemIcon sx={{ minWidth: 40 }}>
-                    <AccountCircle fontSize="small" />
+                  <ListItemIcon sx={{ color: BRAND_COLOR, minWidth: 40 }}>
+                    <AccountCircle />
                   </ListItemIcon>
-                  <ListItemText primary="Editar Perfil" />
+                  <ListItemText primary="Mi Cuenta" />
                 </ListItem>
-                {/* Puedes agregar más opciones aquí */}
+
+                <ListItem
+                  button
+                  onClick={toggleTheme}
+                  sx={{ pl: 4, borderRadius: 2 }}
+                >
+                  <ListItemIcon sx={{ color: BRAND_COLOR, minWidth: 40 }}>
+                    {isDarkMode ? <LightMode /> : <DarkMode />}
+                  </ListItemIcon>
+                  <ListItemText primary={isDarkMode ? "Modo Claro" : "Modo Oscuro"} />
+                </ListItem>
               </List>
             </Collapse>
-          </List>
 
-          <Box sx={{ flexGrow: 1 }} />
-
-          <Divider sx={{ my: 1, mx: 2 }} />
-
-          {/* Cerrar sesión */}
-          <List sx={{ px: 1, pb: 2 }}>
+            {/* Cerrar Sesión */}
             <ListItem
               button
               onClick={handleLogout}
               sx={{
-                borderRadius: 1,
+                borderRadius: 2,
+                mt: 1,
                 color: theme.palette.error.main,
-                '&:hover': { bgcolor: theme.palette.error.light + '15' },
-                '& .MuiListItemIcon-root': { color: theme.palette.error.main, minWidth: 40 },
+                '&:hover': {
+                  bgcolor: theme.palette.error.light + '15',
+                },
               }}
             >
-              <ListItemIcon>
-                <Logout fontSize="small" />
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+                <Logout />
               </ListItemIcon>
               <ListItemText primary="Cerrar Sesión" />
             </ListItem>
@@ -306,7 +246,7 @@ export default function ConsultantSidebar() {
         </Box>
       );
     },
-    [theme.palette.mode, pathname, session]
+    [theme.palette.mode, pathname, session, openConfig]
   );
 
   // Responsive Drawer

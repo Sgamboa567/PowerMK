@@ -12,7 +12,14 @@ import {
   useTheme,
   useMediaQuery,
   Chip,
-  Divider
+  Divider,
+  Alert,
+  CircularProgress,
+  Button,
+  Card,
+  CardContent,
+  IconButton,
+  Badge
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -24,7 +31,7 @@ import { KPISummary } from '@/components/consultant/dashboard/KPISummary';
 import { ChartsSummary } from '@/components/consultant/dashboard/ChartsSummary';
 import { TrackingSummary } from '@/components/consultant/dashboard/TrackingSummary';
 import { TopCategories } from '@/components/consultant/dashboard/TopCategories';
-import { MetricsOverview } from '@/components/consultant/dashboard/MetricsOverview';
+import { RecentSales } from '@/components/consultant/sales/RecentSales';
 import { GoalProgress } from '@/components/consultant/dashboard/GoalProgress';
 import { InventoryCard } from '@/components/consultant/inventory/InventoryCard';
 
@@ -32,7 +39,15 @@ import { InventoryCard } from '@/components/consultant/inventory/InventoryCard';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import InventoryIcon from '@mui/icons-material/Inventory';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SpeedDialIcon from '@mui/material/SpeedDialIcon';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CategoryIcon from '@mui/icons-material/Category';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import AddIcon from '@mui/icons-material/Add';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import InsightsIcon from '@mui/icons-material/Insights';
 
 const BRAND_COLOR = '#FF90B3';
 
@@ -46,11 +61,9 @@ const COLORS = {
 // Definir tipos para las variantes
 import type { Variants } from 'framer-motion';
 
-// Definir las variantes de animación correctamente
+// Definir las variantes de animación
 const containerVariants: Variants = {
-  hidden: { 
-    opacity: 0 
-  },
+  hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
@@ -62,10 +75,7 @@ const containerVariants: Variants = {
 };
 
 const itemVariants: Variants = {
-  hidden: { 
-    opacity: 0, 
-    y: 20 
-  },
+  hidden: { opacity: 0, y: 20 },
   visible: { 
     opacity: 1, 
     y: 0,
@@ -94,6 +104,7 @@ export default function ConsultantDashboard() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Efecto mejorado para cargar datos
   useEffect(() => {
@@ -109,7 +120,6 @@ export default function ConsultantDashboard() {
         const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
         const [salesResponse, clientsResponse, inventoryResponse, goalResponse] = await Promise.all([
-          // Ventas del mes actual
           supabase
             .from('sales')
             .select('amount, created_at')
@@ -117,22 +127,19 @@ export default function ConsultantDashboard() {
             .gte('created_at', firstDayOfMonth.toISOString())
             .lte('created_at', lastDayOfMonth.toISOString()),
 
-          // Clientes activos
           supabase
             .from('clients')
             .select('id, created_at')
             .eq('consultant_id', session.user.id),
 
-          // Inventario
           supabase
             .from('inventory')
             .select('*, products(name, min_stock)')
             .eq('user_id', session.user.id),
 
-          // Meta mensual
           supabase
             .from('goals')
-            .select('*')
+            .select('amount')
             .eq('user_id', session.user.id)
             .single()
         ]);
@@ -162,7 +169,7 @@ export default function ConsultantDashboard() {
         });
       } catch (error) {
         console.error('Error loading dashboard data:', error);
-        // Implementar manejo de errores visual
+        setError('No se pudieron cargar los datos del dashboard. Por favor, intenta de nuevo más tarde.');
       } finally {
         setIsLoading(false);
       }
@@ -185,12 +192,36 @@ export default function ConsultantDashboard() {
     { 
       icon: <InventoryIcon />, 
       name: 'Añadir Producto', 
-      action: () => router.push('/consultant/inventory/new') 
+      action: () => router.push('/consultant/inventory') 
     }
   ];
 
+  if (isLoading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: 2
+      }}>
+        <CircularProgress size={60} sx={{ color: BRAND_COLOR }} />
+        <Typography variant="h6" color="text.secondary">
+          Cargando dashboard...
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
-    <Container maxWidth="xl">
+    <Container 
+      maxWidth="xl" 
+      sx={{ 
+        p: 0,
+        maxWidth: '100%'
+      }}
+    >
       <Box
         component={motion.div}
         variants={containerVariants}
@@ -198,144 +229,394 @@ export default function ConsultantDashboard() {
         animate="visible"
         sx={{
           minHeight: '100vh',
-          py: 6,
+          py: 4,
           px: { xs: 2, sm: 3, md: 4 },
         }}
       >
-        {/* Header con información de la consultora */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 3, md: 4 }, // Padding responsive
-            mb: 6, // Aumentado de 4 a 6
-            borderRadius: 2,
-            background: theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, rgba(255,144,179,0.1), rgba(197,157,95,0.05))'
-              : 'linear-gradient(135deg, rgba(255,144,179,0.08), rgba(197,157,95,0.02))',
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${theme.palette.mode === 'dark'
-              ? 'rgba(255,255,255,0.1)'
-              : 'rgba(197,157,95,0.1)'}`,
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+        
+        {/* Header con notificaciones e información rápida */}
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            mb: 3
           }}
         >
-          <Avatar
-            sx={{
-              width: { xs: 90, md: 110 },
-              height: { xs: 90, md: 110 },
-              bgcolor: BRAND_COLOR,
-              border: `4px solid ${COLORS.gold}`,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-              transition: 'transform 0.3s ease',
-              '&:hover': {
-                transform: 'scale(1.05)',
-              }
+          <Typography 
+            variant="h4" 
+            sx={{ 
+              fontWeight: 700, 
+              color: theme.palette.mode === 'dark' ? '#fff' : '#333',
+              fontSize: { xs: '1.5rem', md: '2rem' }
             }}
-            src={session?.user?.image || undefined}
           >
-            {session?.user?.name?.charAt(0) || 'C'}
-          </Avatar>
+            ¡Hola, {session?.user?.name?.split(' ')[0]}!
+          </Typography>
 
-          <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-              <Typography variant="h4" fontWeight={600}>
-                {session?.user?.name}
-              </Typography>
-              <Chip
-                label="Consultora Mary Kay"
-                sx={{
-                  bgcolor: COLORS.brand,
-                  color: 'white',
-                  fontWeight: 500,
-                  '& .MuiChip-label': { px: 2 }
-                }}
-              />
-            </Box>
-            
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-              {session?.user?.email}
-            </Typography>
-
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Chip
-                icon={<ShoppingCartIcon />}
-                label={`$${stats.monthSales.toLocaleString()} en ventas este mes`}
-                variant="outlined"
-                sx={{ borderColor: COLORS.brand, color: COLORS.brand }}
-              />
-              <Chip
-                icon={<PersonAddIcon />}
-                label={`${stats.activeClients} clientes activos`}
-                variant="outlined"
-                sx={{ borderColor: COLORS.brand, color: COLORS.brand }}
-              />
-            </Box>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <IconButton
+              sx={{
+                bgcolor: theme.palette.mode === 'dark' 
+                  ? 'rgba(255,255,255,0.1)' 
+                  : 'rgba(0,0,0,0.05)',
+                '&:hover': { 
+                  bgcolor: theme.palette.mode === 'dark' 
+                    ? 'rgba(255,255,255,0.2)' 
+                    : 'rgba(0,0,0,0.1)' 
+                }
+              }}
+              onClick={() => router.push('/consultant/notifications')}
+            >
+              <Badge badgeContent={3} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
           </Box>
-        </Paper>
+        </Box>
 
-        <Grid container spacing={4}>
-          {/* KPIs y Métricas */}
-          <Grid item xs={12}>
-            <Box mb={4}>
-              <motion.div variants={itemVariants}>
-                <KPISummary stats={stats} />
-              </motion.div>
-            </Box>
+        {/* KPIs Principales */}
+        <motion.div variants={itemVariants}>
+          <KPISummary stats={stats} />
+        </motion.div>
+        
+        <Grid container spacing={3} sx={{ mt: 2 }}>
+          {/* Perfil y Meta Mensual */}
+          <Grid item xs={12} md={4}>
+            <motion.div variants={itemVariants}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  height: '100%',
+                  borderRadius: 2,
+                  background: theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(255,144,179,0.15), rgba(197,157,95,0.05))'
+                    : 'linear-gradient(135deg, rgba(255,144,179,0.08), rgba(255,255,255,0.9))',
+                  backdropFilter: 'blur(10px)',
+                  border: `1px solid ${theme.palette.mode === 'dark'
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(197,157,95,0.1)'}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center'
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: { xs: 90, md: 110 },
+                    height: { xs: 90, md: 110 },
+                    bgcolor: BRAND_COLOR,
+                    border: `4px solid ${COLORS.gold}`,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                    mb: 2
+                  }}
+                  src={session?.user?.image || undefined}
+                >
+                  {session?.user?.name?.charAt(0) || 'C'}
+                </Avatar>
+
+                <Typography variant="h5" fontWeight={600} gutterBottom>
+                  {session?.user?.name}
+                </Typography>
+                
+                <Chip
+                  label="Consultora Mary Kay"
+                  sx={{
+                    bgcolor: COLORS.brand,
+                    color: 'white',
+                    fontWeight: 500,
+                    mb: 2
+                  }}
+                />
+                
+                <Divider sx={{ width: '100%', my: 2 }} />
+                
+                <Box sx={{ width: '100%', mb: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Meta Mensual
+                  </Typography>
+                  <GoalProgress />
+                </Box>
+
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => router.push('/consultant/account')}
+                  sx={{
+                    borderColor: BRAND_COLOR,
+                    color: BRAND_COLOR,
+                    '&:hover': {
+                      borderColor: COLORS.brandDark,
+                      backgroundColor: `${BRAND_COLOR}10`
+                    },
+                    mt: 'auto'
+                  }}
+                >
+                  Ver perfil completo
+                </Button>
+              </Paper>
+            </motion.div>
           </Grid>
-
-          {/* Gráficos y Meta */}
+          
+          {/* Gráfico de ventas */}
           <Grid item xs={12} md={8}>
             <motion.div variants={itemVariants}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: { xs: 3, md: 4 }, // Padding responsive
-                  height: '100%',
+                  p: { xs: 2, md: 3 },
                   borderRadius: 2,
+                  height: '100%',
                   background: theme.palette.mode === 'dark'
                     ? 'rgba(26,26,26,0.9)'
                     : 'rgba(255,255,255,0.9)',
                   border: `1px solid ${theme.palette.mode === 'dark'
                     ? 'rgba(255,144,179,0.1)'
                     : 'rgba(255,144,179,0.2)'}`,
+                  display: 'flex',
+                  flexDirection: 'column'
                 }}
               >
-                <ChartsSummary />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <ShowChartIcon sx={{ color: BRAND_COLOR }} />
+                    <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                      Tendencia de Ventas
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" onClick={() => router.push('/consultant/analytics')}>
+                    <InsightsIcon sx={{ color: BRAND_COLOR }} />
+                  </IconButton>
+                </Box>
+                
+                <Box sx={{ flexGrow: 1 }}>
+                  <ChartsSummary />
+                </Box>
               </Paper>
             </motion.div>
           </Grid>
+        </Grid>
 
+        <Grid container spacing={3} sx={{ mt: 2 }}>
+          {/* Columna Izquierda: Inventario Crítico y Categorías */}
           <Grid item xs={12} md={4}>
-            <motion.div variants={itemVariants}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  height: '100%',
-                  borderRadius: 2,
-                  background: theme.palette.mode === 'dark'
-                    ? 'rgba(26,26,26,0.9)'
-                    : 'rgba(255,255,255,0.9)',
-                  border: `1px solid ${theme.palette.mode === 'dark'
-                    ? 'rgba(255,144,179,0.1)'
-                    : 'rgba(255,144,179,0.2)'}`,
-                }}
-              >
-                <GoalProgress />
-              </Paper>
-            </motion.div>
-          </Grid>
+            <Grid container spacing={3}>
+              {/* Inventario Crítico */}
+              <Grid item xs={12}>
+                <motion.div variants={itemVariants}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: theme.palette.mode === 'dark'
+                        ? 'rgba(26,26,26,0.9)'
+                        : 'rgba(255,255,255,0.9)',
+                      border: theme.palette.mode === 'dark'
+                        ? '1px solid rgba(255,144,179,0.1)'
+                        : '1px solid rgba(255,144,179,0.2)'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <InventoryIcon sx={{ color: theme.palette.warning.main }} />
+                        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                          Inventario Crítico
+                        </Typography>
+                      </Box>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        endIcon={<ArrowForwardIcon />}
+                        onClick={() => router.push('/consultant/inventory')}
+                        sx={{
+                          borderColor: BRAND_COLOR,
+                          color: BRAND_COLOR,
+                          '&:hover': {
+                            borderColor: COLORS.brandDark,
+                            backgroundColor: `${BRAND_COLOR}10`
+                          }
+                        }}
+                      >
+                        Ver todo
+                      </Button>
+                    </Box>
+                    <InventoryCard />
+                  </Paper>
+                </motion.div>
+              </Grid>
+              
+              {/* Categorías Top */}
+              <Grid item xs={12}>
+                <motion.div variants={itemVariants}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: theme.palette.mode === 'dark'
+                        ? 'rgba(26,26,26,0.9)'
+                        : 'rgba(255,255,255,0.9)',
+                      border: theme.palette.mode === 'dark'
+                        ? '1px solid rgba(255,144,179,0.1)'
+                        : '1px solid rgba(255,144,179,0.2)'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CategoryIcon sx={{ color: BRAND_COLOR }} />
+                        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                          Categorías Más Vendidas
+                        </Typography>
+                      </Box>
+                      <IconButton size="small" onClick={() => console.log('Ver más categorías')}>
+                        <MoreVertIcon />
+                      </IconButton>
+                    </Box>
+                    <TopCategories />
+                  </Paper>
+                </motion.div>
+              </Grid>
 
-          {/* Inventario y Seguimiento */}
-          <Grid item xs={12} md={4}>
-            <motion.div variants={itemVariants}>
-              <InventoryCard />
-            </motion.div>
+              {/* Accesos rápidos */}
+              <Grid item xs={12}>
+                <motion.div variants={itemVariants}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: theme.palette.mode === 'dark'
+                        ? 'rgba(26,26,26,0.9)'
+                        : 'rgba(255,255,255,0.9)',
+                      border: theme.palette.mode === 'dark'
+                        ? '1px solid rgba(255,144,179,0.1)'
+                        : '1px solid rgba(255,144,179,0.2)'
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 500 }}>
+                      Accesos Rápidos
+                    </Typography>
+                    
+                    <Grid container spacing={2}>
+                      {[
+                        { icon: <ShoppingCartIcon />, label: 'Nueva Venta', action: () => router.push('/consultant/sales/new'), color: '#4CAF50' },
+                        { icon: <PersonAddIcon />, label: 'Nuevo Cliente', action: () => router.push('/consultant/clients/new'), color: '#2196F3' },
+                        { icon: <InventoryIcon />, label: 'Añadir Inventario', action: () => router.push('/consultant/inventory'), color: '#FF9800' },
+                        { icon: <LocalOfferIcon />, label: 'Promociones', action: () => router.push('/consultant/promotions'), color: '#E91E63' },
+                      ].map((item, index) => (
+                        <Grid item xs={6} key={index}>
+                          <Card
+                            elevation={0}
+                            sx={{
+                              bgcolor: theme.palette.mode === 'dark'
+                                ? 'rgba(255,255,255,0.05)'
+                                : 'rgba(0,0,0,0.02)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                transform: 'translateY(-4px)',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                bgcolor: theme.palette.mode === 'dark'
+                                  ? 'rgba(255,255,255,0.1)'
+                                  : 'rgba(0,0,0,0.04)',
+                              }
+                            }}
+                            onClick={item.action}
+                          >
+                            <CardContent sx={{ 
+                              display: 'flex', 
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              textAlign: 'center',
+                              p: 2
+                            }}>
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  p: 1.5,
+                                  borderRadius: '50%',
+                                  bgcolor: `${item.color}20`,
+                                  color: item.color,
+                                  mb: 1
+                                }}
+                              >
+                                {item.icon}
+                              </Box>
+                              <Typography variant="body2">{item.label}</Typography>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Paper>
+                </motion.div>
+              </Grid>
+            </Grid>
           </Grid>
-
+          
+          {/* Columna Derecha: Seguimiento y Ventas Recientes */}
           <Grid item xs={12} md={8}>
-            <motion.div variants={itemVariants}>
-              <TrackingSummary />
-            </motion.div>
+            <Grid container spacing={3}>
+              {/* TrackingSummary */}
+              <Grid item xs={12}>
+                <motion.div variants={itemVariants}>
+                  <TrackingSummary />
+                </motion.div>
+              </Grid>
+              
+              {/* Ventas Recientes */}
+              <Grid item xs={12}>
+                <motion.div variants={itemVariants}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      borderRadius: 2,
+                      bgcolor: theme.palette.mode === 'dark'
+                        ? 'rgba(26,26,26,0.9)'
+                        : 'rgba(255,255,255,0.9)',
+                      border: theme.palette.mode === 'dark'
+                        ? '1px solid rgba(255,144,179,0.1)'
+                        : '1px solid rgba(255,144,179,0.2)'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ShoppingCartIcon sx={{ color: BRAND_COLOR }} />
+                        <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                          Ventas Recientes
+                        </Typography>
+                      </Box>
+                      <Button 
+                        size="small"
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => router.push('/consultant/sales/new')}
+                        sx={{
+                          bgcolor: BRAND_COLOR,
+                          '&:hover': {
+                            bgcolor: COLORS.brandDark,
+                          }
+                        }}
+                      >
+                        Nueva Venta
+                      </Button>
+                    </Box>
+                    <RecentSales />
+                  </Paper>
+                </motion.div>
+              </Grid>
+            </Grid>
           </Grid>
         </Grid>
 
@@ -344,7 +625,7 @@ export default function ConsultantDashboard() {
           ariaLabel="Acciones Rápidas"
           sx={{
             position: 'fixed',
-            bottom: { xs: 16, md: 32 }, // Posición responsive
+            bottom: { xs: 16, md: 32 },
             right: { xs: 16, md: 32 },
             '& .MuiFab-primary': {
               width: 64,

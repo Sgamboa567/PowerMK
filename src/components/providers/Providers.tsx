@@ -7,7 +7,7 @@ import { ReactNode } from 'react'
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="system">
         {children}
       </ThemeProvider>
     </SessionProvider>

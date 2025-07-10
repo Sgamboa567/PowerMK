@@ -1,11 +1,11 @@
 'use client'
-import { Grid } from '@mui/material';
+import { Grid, useTheme } from '@mui/material';
 import { motion } from 'framer-motion';
-import { KPICard } from '../shared/KPICard';
+import { KPICard } from './KPICard';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
-import InventoryIcon from '@mui/icons-material/Inventory';
+import TodayIcon from '@mui/icons-material/Today';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 interface DashboardStats {
   monthSales: number;
@@ -14,6 +14,7 @@ interface DashboardStats {
   newClientsToday: number;
   lowStockProducts: number;
   totalProducts: number;
+  goalProgress: number;
 }
 
 export function KPISummary({ stats }: { stats: DashboardStats }) {
@@ -58,11 +59,13 @@ export function KPISummary({ stats }: { stats: DashboardStats }) {
         />
       </Grid>
       <Grid item xs={12} md={4}>
+        {/* Reemplazamos la tarjeta de Inventario Crítico por Actividad de Hoy */}
         <KPICard
-          title="Inventario Crítico"
-          value={`${stats.lowStockProducts}/${stats.totalProducts}`}
-          highlight={stats.lowStockProducts > 0 ? 'warning' : undefined}
-          icon={<InventoryIcon />}
+          title="Actividad de Hoy"
+          value="Ver detalles"
+          icon={<TodayIcon />}
+          clickable={true}
+          onClick={() => console.log("Ver actividad de hoy")}
         />
       </Grid>
     </Grid>

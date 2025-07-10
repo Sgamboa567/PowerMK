@@ -1,88 +1,102 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { Grid, Paper, Typography, Box, useTheme } from '@mui/material';
-import { motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { motion } from 'framer-motion';
+import { useSession } from 'next-auth/react';
 import { supabase } from '@/lib/supabase';
-import { GoalProgress } from './GoalProgress';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
+import { Chart, registerables } from 'chart.js';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
-const BRAND_COLOR = '#FF90B3';
+Chart.register(...registerables);
 
 export function ChartsSummary() {
   const theme = useTheme();
-  const [salesData, setSalesData] = useState<any[]>([]);
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
+  const [salesData, setSalesData] = useState({
+    labels: [] as string[],
+    datasets: [
+      {
+        label: 'Ventas',
+        data: [] as number[],
+        backgroundColor: 'rgba(255, 144, 179, 0.2)',
+        borderColor: '#FF90B3',
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  });
 
   useEffect(() => {
     const fetchSalesData = async () => {
-      try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      if (!session?.user?.id) return;
 
-        const { data, error } = await supabase
+      try {
+        setLoading(true);
+        const today = new Date();
+        
+        // Obtener ventas de los últimos 7 días
+        const dates = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(today, 6 - i);
+          return {
+            date,
+            label: format(date, 'd MMM', { locale: es }),
+            formatted: format(date, 'yyyy-MM-dd')
+          };
+        });
+
+        const { data: salesByDay, error } = await supabase
           .from('sales')
           .select('amount, created_at')
-          .gte('created_at', thirtyDaysAgo.toISOString())
-          .order('created_at');
+          .eq('user_id', session.user.id)
+          .gte('created_at', dates[0].date.toISOString())
+          .lte('created_at', new Date(today.setHours(23, 59, 59, 999)).toISOString());
 
         if (error) throw error;
 
-        // Agrupar ventas por día
-        const salesByDay = data.reduce((acc: any, sale: any) => {
-          const date = format(new Date(sale.created_at), 'dd/MM', { locale: es });
-          if (!acc[date]) {
-            acc[date] = 0;
-          }
-          acc[date] += sale.amount;
-          return acc;
-        }, {});
+        const dailySales = dates.map(day => {
+          const dayStart = new Date(day.date);
+          dayStart.setHours(0, 0, 0, 0);
+          
+          const dayEnd = new Date(day.date);
+          dayEnd.setHours(23, 59, 59, 999);
+          
+          const salesForDay = salesByDay?.filter(sale => 
+            new Date(sale.created_at) >= dayStart && 
+            new Date(sale.created_at) <= dayEnd
+          ) || [];
+          
+          const total = salesForDay.reduce((sum, sale) => sum + sale.amount, 0);
+          return total;
+        });
 
         const chartData = {
-          labels: Object.keys(salesByDay),
+          labels: dates.map(d => d.label),
           datasets: [
             {
               label: 'Ventas',
-              data: Object.values(salesByDay),
-              fill: true,
+              data: dailySales,
+              backgroundColor: 'rgba(255, 144, 179, 0.2)',
               borderColor: '#FF90B3',
-              backgroundColor: 'rgba(255, 144, 179, 0.1)',
               tension: 0.4,
+              fill: true,
             },
           ],
         };
 
         setSalesData(chartData);
-        setLoading(false);
+
       } catch (error) {
         console.error('Error fetching sales data:', error);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchSalesData();
-  }, []);
+  }, [session]);
 
   const options = {
     responsive: true,
@@ -91,44 +105,56 @@ export function ChartsSummary() {
         display: false,
       },
       tooltip: {
+        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)',
+        titleColor: theme.palette.mode === 'dark' ? '#fff' : '#000',
+        bodyColor: theme.palette.mode === 'dark' ? '#fff' : '#000',
+        borderColor: theme.palette.divider,
+        borderWidth: 1,
+        padding: 12,
+        displayColors: false,
         callbacks: {
-          label: (context: any) => `$${context.parsed.y.toLocaleString()}`
+          label: function(context: any) {
+            return `$${context.parsed.y.toLocaleString()}`;
+          }
         }
       }
     },
     scales: {
       x: {
         grid: {
-          display: false
+          color: theme.palette.divider,
+        },
+        ticks: {
+          color: theme.palette.text.secondary,
         }
       },
       y: {
         beginAtZero: true,
+        grid: {
+          color: theme.palette.divider,
+        },
         ticks: {
-          callback: (value: number) => `$${value.toLocaleString()}`
+          color: theme.palette.text.secondary,
+          callback: function(value: any) {
+            return '$' + value.toLocaleString();
+          }
         }
       }
-    },
-    maintainAspectRatio: false
+    }
   };
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} md={8}>
+      <Grid item xs={12} md={12}>
         <Paper
-          component={motion.div}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
           elevation={0}
           sx={{
             p: 3,
-            height: '400px',
+            height: '100%',
             borderRadius: 2,
             bgcolor: theme.palette.mode === 'dark' 
               ? 'rgba(26,26,26,0.9)' 
               : 'rgba(255,255,255,0.9)',
-            backdropFilter: 'blur(10px)',
             border: theme.palette.mode === 'dark'
               ? '1px solid rgba(255,144,179,0.1)'
               : '1px solid rgba(255,144,179,0.2)',
@@ -149,31 +175,6 @@ export function ChartsSummary() {
               No hay datos de ventas disponibles
             </Box>
           )}
-        </Paper>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <Paper
-          component={motion.div}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          elevation={0}
-          sx={{
-            p: 3,
-            borderRadius: 2,
-            backdropFilter: 'blur(10px)',
-            bgcolor: theme.palette.mode === 'dark' 
-              ? 'rgba(26,26,26,0.9)' 
-              : 'rgba(255,255,255,0.9)',
-            border: `1px solid ${theme.palette.mode === 'dark' 
-              ? 'rgba(255,144,179,0.1)' 
-              : 'rgba(255,144,179,0.2)'}`,
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 500 }}>
-            Progreso de Meta
-          </Typography>
-          <GoalProgress />
         </Paper>
       </Grid>
     </Grid>

@@ -58,10 +58,10 @@ export function FollowupList() {
             id,
             name,
             phone,
-            sales (
+            sales!fk_sales_client(
               created_at
             ),
-            follow_ups (
+            follow_ups(
               next_date,
               priority,
               notes

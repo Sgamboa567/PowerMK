@@ -40,7 +40,7 @@ export function TopCategories() {
           .select(`
             quantity,
             amount,
-            products!sales_products_product_id_fkey (
+            products:fk_sale_products_product (
               category
             )
           `)
