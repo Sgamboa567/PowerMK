@@ -86,16 +86,23 @@ export function ClientActivity() {
         if (salesError) throw salesError;
 
         // Formatear actividades
-        const formattedActivities: Activity[] = sales?.map(sale => ({
-          id: sale.id,
-          type: 'purchase',
-          clientId: sale.clients?.id || '', // Acceso seguro con operador opcional
-          clientName: sale.clients?.name || 'Cliente',
-          clientPhone: sale.clients?.phone || '',
-          date: sale.created_at,
-          details: `Compra por $${sale.amount.toLocaleString()}`,
-          amount: sale.amount
-        })) || [];
+        const formattedActivities: Activity[] = sales?.map(sale => {
+          // Determinar si es un array y obtener los datos del cliente
+          const clientData = sale.clients && Array.isArray(sale.clients) 
+            ? sale.clients[0] // Si es array, toma el primer cliente
+            : sale.clients;   // Si es objeto, úsalo directamente
+          
+          return {
+            id: sale.id,
+            type: 'purchase',
+            clientId: clientData?.id || '',
+            clientName: clientData?.name || 'Cliente',
+            clientPhone: clientData?.phone || '',
+            date: sale.created_at,
+            details: `Compra por $${sale.amount.toLocaleString()}`,
+            amount: sale.amount
+          };
+        }) || [];
 
         setActivities(formattedActivities);
 
