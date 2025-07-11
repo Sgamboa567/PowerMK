@@ -22,7 +22,6 @@ interface Client {
   phone: string;
   email: string;
   birthday: string | null;
-  address?: string;
 }
 
 interface EditClientModalProps {
@@ -40,7 +39,6 @@ export function EditClientModal({ open, onClose, onSaved, client }: EditClientMo
     phone: '',
     email: '',
     birthday: '',
-    address: '',
   });
 
   useEffect(() => {
@@ -51,7 +49,6 @@ export function EditClientModal({ open, onClose, onSaved, client }: EditClientMo
         phone: client.phone || '',
         email: client.email || '',
         birthday: client.birthday || '',
-        address: client.address || '',
       });
     }
   }, [client]);
@@ -140,14 +137,6 @@ export function EditClientModal({ open, onClose, onSaved, client }: EditClientMo
                 value={formData.birthday}
                 onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
                 InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Dirección"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
             </Grid>
           </Grid>

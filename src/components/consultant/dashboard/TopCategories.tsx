@@ -50,7 +50,13 @@ export function TopCategories() {
 
         // Procesar datos por categoría
         const categoryTotals = data.reduce((acc: { [key: string]: number }, item) => {
-          const category = item.products?.category || 'Sin categoría';
+          // Manejar casos donde products puede ser un array u objeto
+          const productData = Array.isArray(item.products) ? item.products[0] : item.products;
+          
+          // Obtener categoría con fallback a 'Sin categoría'
+          const category = productData?.category || 'Sin categoría';
+          
+          // Acumular el total para esta categoría
           acc[category] = (acc[category] || 0) + (item.amount || 0);
           return acc;
         }, {});
