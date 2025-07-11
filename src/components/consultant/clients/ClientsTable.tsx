@@ -479,27 +479,44 @@ export function ClientsTable({ addOpen = false, setAddOpen = () => {} }: Props) 
             <TableHead>
               <TableRow>
                 {[
-                  'Cliente',
-                  'Contacto',
-                  'Última Compra',
-                  'Compras',
-                  'Acciones'
+                  { label: "Cliente", align: "left" },
+                  { label: "Contacto", align: "left" },
+                  { label: "Última Compra", align: "left" },
+                  { label: "Compras", align: "right" },
+                  { label: "Acciones", align: "right" }
                 ].map((header) => (
                   <TableCell 
-                    key={header}
-                    align={header === 'Compras' || header === 'Acciones' ? 'right' : 'left'}
+                    key={header.label}
+                    align={header.align as "left" | "right" | "center" | "justify" | "inherit"}
                     sx={{ 
                       fontWeight: 600,
-                      fontSize: '0.875rem',
+                      position: 'sticky',
+                      top: 0,
+                      zIndex: 2,
+                      // Fondo sólido y degradado rosado
                       bgcolor: theme.palette.mode === 'dark' 
-                        ? 'rgba(255,144,179,0.05)' 
-                        : 'rgba(255,144,179,0.02)',
-                      color: theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.common.white, 0.7)
-                        : alpha(theme.palette.common.black, 0.7),
+                        ? alpha(BRAND_COLOR, 0.2)
+                        : alpha(BRAND_COLOR, 0.05),
+                      // Base sólida para evitar transparencias
+                      '&:after': {
+                        content: '""',
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: '100%',
+                        zIndex: -1,
+                        backgroundColor: theme.palette.mode === 'dark' 
+                          ? 'rgba(30, 30, 30, 0.95)'
+                          : 'rgba(255, 255, 255, 0.95)',
+                      },
+                      borderBottom: `2px solid ${alpha(BRAND_COLOR, 0.4)}`,
+                      color: theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.87)',
+                      paddingTop: '12px',
+                      paddingBottom: '12px',
                     }}
                   >
-                    {header}
+                    {header.label}
                   </TableCell>
                 ))}
               </TableRow>

@@ -493,76 +493,49 @@ export function InventoryTable({ userId, addOpen, setAddOpen }: Props) {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      SKU
-                    </TableCell>
-                    <TableCell 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      Producto
-                    </TableCell>
-                    <TableCell 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      Categoría
-                    </TableCell>
-                    <TableCell align="right" 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      Precio
-                    </TableCell>
-                    <TableCell align="right" 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      Stock
-                    </TableCell>
-                    <TableCell 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      Estado
-                    </TableCell>
-                    <TableCell align="right" 
-                      sx={{ 
-                        fontWeight: 600,
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05)
-                      }}
-                    >
-                      Acciones
-                    </TableCell>
+                    {[
+                      { label: "SKU", align: "left" },
+                      { label: "Producto", align: "left" },
+                      { label: "Categoría", align: "left" },
+                      { label: "Precio", align: "right" },
+                      { label: "Stock", align: "right" },
+                      { label: "Estado", align: "left" },
+                      { label: "Acciones", align: "right" }
+                    ].map((header, index) => (
+                      <TableCell 
+                        key={index}
+                        align={header.align as "left" | "right" | "center" | "justify" | "inherit"}
+                        sx={{ 
+                          fontWeight: 600, 
+                          position: 'sticky',
+                          top: 0,
+                          zIndex: 2,
+                          // Fondo sólido y degradado rosado
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? alpha(BRAND_COLOR, 0.2)
+                            : alpha(BRAND_COLOR, 0.05),
+                          // Base sólida para evitar transparencias
+                          '&:after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            height: '100%',
+                            zIndex: -1,
+                            backgroundColor: theme.palette.mode === 'dark' 
+                              ? 'rgba(30, 30, 30, 0.95)'
+                              : 'rgba(255, 255, 255, 0.95)',
+                          },
+                          borderBottom: `2px solid ${alpha(BRAND_COLOR, 0.4)}`,
+                          color: theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.87)',
+                          paddingTop: '12px',
+                          paddingBottom: '12px',
+                        }}
+                      >
+                        {header.label}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>

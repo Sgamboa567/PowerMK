@@ -14,6 +14,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
+import { alpha } from '@mui/material/styles';
 
 // Constantes
 const BRAND_COLOR = '#FF90B3';
@@ -225,12 +226,69 @@ interface ProductItemProps {
   products: Product[];
   onRemove: (index: number) => void;
   onChange: (index: number, field: string, value: any) => void;
+  loading?: boolean;
 }
 
-// Componente ProductItem mejorado
-const ProductItem = ({ product, index, products, onRemove, onChange }: ProductItemProps) => {
-  // Buscar el producto actual para obtener información correcta
-  const currentProduct = products.find(p => p.id === product.product_id);
+// Componente ProductItem mejorado - VERSIÓN ESTABLE FINAL
+const ProductItem = ({ product, index, products, onRemove, onChange, loading = false }: ProductItemProps) => {
+  const theme = useTheme();
+  
+  // Memoizar el producto actual
+  const currentProduct = useMemo(() => {
+    return products.find(p => p.id === product.product_id) || null;
+  }, [product.product_id, products]);
+  
+  // Función para manejar cambios de producto
+  const handleProductChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const productId = e.target.value;
+    
+    // Actualizar el ID del producto
+    onChange(index, 'product_id', productId);
+    
+    // Encontrar el producto seleccionado
+    const selectedProduct = products.find(p => p.id === productId);
+    
+    // Actualizar precio y resetear cantidad
+    if (selectedProduct) {
+      onChange(index, 'price', selectedProduct.price);
+      onChange(index, 'quantity', 1);
+    }
+  };
+  
+  // Función para manejar cambios de cantidad
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const newQuantity = parseInt(value);
+    
+    if (!isNaN(newQuantity) && newQuantity > 0) {
+      // Si hay un producto seleccionado, validar contra stock disponible
+      if (currentProduct) {
+        const maxStock = currentProduct.stock;
+        // Asegurar que la cantidad esté entre 1 y el stock máximo
+        const validQuantity = Math.max(1, Math.min(newQuantity, maxStock));
+        onChange(index, 'quantity', validQuantity);
+      } else {
+        onChange(index, 'quantity', newQuantity);
+      }
+    }
+  };
+  
+  // Función para manejar cambios de precio
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const newPrice = parseFloat(value);
+    
+    if (!isNaN(newPrice) && newPrice >= 0) {
+      onChange(index, 'price', newPrice);
+    }
+  };
+  
+  // Actualizar precio si es necesario
+  useEffect(() => {
+    if (currentProduct && product.price === 0) {
+      onChange(index, 'price', currentProduct.price);
+    }
+  }, [currentProduct, index, onChange, product.price]);
   
   return (
     <motion.div
@@ -248,11 +306,11 @@ const ProductItem = ({ product, index, products, onRemove, onChange }: ProductIt
         p: 2,
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: currentProduct ? alpha(BRAND_COLOR, 0.4) : 'divider',
         background: (theme) => 
           theme.palette.mode === 'dark' 
-            ? 'rgba(255,255,255,0.03)' 
-            : 'rgba(255,255,255,0.5)',
+            ? currentProduct ? alpha(BRAND_COLOR, 0.07) : 'rgba(255,255,255,0.03)'
+            : currentProduct ? alpha(BRAND_COLOR, 0.03) : 'rgba(255,255,255,0.5)',
         backdropFilter: 'blur(10px)',
         transition: 'all 0.3s ease',
         '&:hover': {
@@ -265,64 +323,74 @@ const ProductItem = ({ product, index, products, onRemove, onChange }: ProductIt
           select
           label="Producto"
           value={product.product_id}
-          onChange={e => {
-            const selectedProduct = products.find(prod => prod.id === e.target.value);
-            onChange(index, 'product_id', e.target.value);
-            // Actualizar el precio con el del producto seleccionado
-            onChange(index, 'price', selectedProduct ? selectedProduct.price : 0);
-          }}
+          onChange={handleProductChange}
           sx={{ flex: 2 }}
+          disabled={loading}
           required
         >
-          {products.map(prod => (
+          <MenuItem value="" disabled>Seleccionar producto</MenuItem>
+          {products.map(p => (
             <MenuItem 
-              key={prod.id} 
-              value={prod.id}
-              disabled={prod.stock < 1}
+              key={p.id} 
+              value={p.id}
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 1
+              }}
             >
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                <Typography>{prod.name}</Typography>
-                <Chip 
-                  size="small"
-                  label={`Stock: ${prod.stock}`}
-                  color={prod.stock < 5 ? 'warning' : 'default'}
-                />
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Typography variant="body1">{p.name}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Stock: {p.stock} {p.sku && `· SKU: ${p.sku}`}
+                </Typography>
               </Box>
+              <Chip 
+                size="small" 
+                label={`$${p.price.toLocaleString()}`}
+                color="primary" 
+                variant="outlined"
+                sx={{ ml: 'auto' }}
+              />
             </MenuItem>
           ))}
         </TextField>
+        
         <TextField
           label="Cantidad"
           type="number"
           value={product.quantity}
-          onChange={e => {
-            const newQuantity = Number(e.target.value);
-            // Solo permitir cantidades dentro del stock disponible
-            if (currentProduct && newQuantity <= currentProduct.stock && newQuantity >= 1) {
-              onChange(index, 'quantity', newQuantity);
-            }
-          }}
+          onChange={handleQuantityChange}
           sx={{ flex: 1 }}
           inputProps={{ 
             min: 1,
-            max: currentProduct?.stock || 1
+            max: currentProduct?.stock || 99,
+            step: 1
           }}
-          helperText={currentProduct ? `Stock disponible: ${currentProduct.stock}` : 'Seleccione un producto'}
-          disabled={!currentProduct}
+          helperText={
+            currentProduct 
+              ? `Stock disponible: ${currentProduct.stock}`
+              : 'Seleccione un producto'
+          }
+          disabled={!currentProduct || loading}
         />
+        
         <TextField
           label="Precio"
           type="number"
           value={product.price}
-          onChange={e => onChange(index, 'price', Number(e.target.value))}
+          onChange={handlePriceChange}
           sx={{ flex: 1 }}
           inputProps={{ min: 0 }}
+          disabled={!currentProduct || loading}
         />
+        
         <Tooltip title="Eliminar producto">
           <IconButton 
             color="error" 
             onClick={() => onRemove(index)}
             sx={{ alignSelf: 'center' }}
+            disabled={loading}
           >
             <RemoveCircleIcon />
           </IconButton>
@@ -347,9 +415,7 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
   const [amount, setAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [openClient, setOpenClient] = useState(false);
-  // Estado para manejar errores
   const [errorMessage, setErrorMessage] = useState('');
-  // Estado para controlar la carga de datos
   const [loadingData, setLoadingData] = useState(false);
 
   // Cargar clientes y productos al abrir el modal
@@ -387,16 +453,16 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
 
         if (error) throw error;
 
-        // 3. Formatear los productos para el select - CORREGIDO
+        // 3. Formatear los productos para el select
         const availableProducts = inventoryData
-          .filter(item => item.products) // Asegurarse que el producto existe
+          .filter(item => item.products)
           .map(item => ({
             id: item.product_id,
-            name: item.products.name,
-            price: item.products.price,
-            stock: item.quantity,
-            sku: item.products.sku,
-            category: item.products.category
+            name: item.products?.name || 'Producto sin nombre',
+            price: Number(item.products?.price || 0),
+            stock: Number(item.quantity || 0),
+            sku: item.products?.sku || '',
+            category: item.products?.category || 'Sin categoría'
           }));
 
         setProducts(availableProducts);
@@ -426,13 +492,22 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
   }, [selectedProducts]);
 
   const handleProductChange = (index: number, field: string, value: any) => {
-    const updated = [...selectedProducts];
-    updated[index] = { ...updated[index], [field]: value };
-    setSelectedProducts(updated);
+    setSelectedProducts(prevProducts => {
+      const updatedProducts = [...prevProducts];
+      if (updatedProducts[index]) {
+        updatedProducts[index] = { ...updatedProducts[index], [field]: value };
+      }
+      return updatedProducts;
+    });
   };
 
   const handleAddProduct = () => {
-    setSelectedProducts([...selectedProducts, { product_id: '', quantity: 1, price: 0 }]);
+    const newProduct: SelectedProduct = { 
+      product_id: '', 
+      quantity: 1, 
+      price: 0 
+    };
+    setSelectedProducts(prev => [...prev, newProduct]);
   };
 
   const handleRemoveProduct = (index: number) => {
@@ -444,7 +519,7 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      setErrorMessage(''); // Limpiar mensajes de error anteriores
+      setErrorMessage('');
       // 1. Verificar stock disponible
       for (const p of selectedProducts) {
         const { data: inventoryItem, error: inventoryError } = await supabase
@@ -563,30 +638,18 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
     }
   };
 
-  // Memoizar cálculos pesados
-  const memoizedProducts = useMemo(() => {
-    return products.map(prod => ({
-      ...prod,
-      isLowStock: prod.stock < 5
-    }));
-  }, [products]);
-
-  // Agregar esta validación antes del handleSubmit
+  // Validación del formulario
   const isFormValid = useMemo(() => {
-    // Verificar que haya un cliente seleccionado
     if (!selectedClient) return false;
-    
-    // Verificar que haya productos seleccionados
     if (selectedProducts.length === 0) return false;
     
-    // Verificar que todos los productos tengan cantidad y producto válidos
     for (const prod of selectedProducts) {
       if (!prod.product_id || prod.quantity <= 0) return false;
     }
     
     return true;
   }, [selectedClient, selectedProducts]);
-
+  
   return (
     <Dialog
       open={open}
@@ -771,6 +834,18 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
                 Total: ${amount.toLocaleString()}
               </Typography>
             </Box>
+
+            {products.length === 0 && !loadingData && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No hay productos con stock disponible. Por favor, actualice su inventario.
+              </Alert>
+            )}
+
+            {clients.length === 0 && !loadingData && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No tiene clientes registrados. Por favor, agregue un cliente nuevo.
+              </Alert>
+            )}
           </>
         )}
       </DialogContent>

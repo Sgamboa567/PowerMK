@@ -577,78 +577,49 @@ export function SalesTable({ userId }: { userId: string }) {
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell 
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Fecha
-                    </TableCell>
-                    <TableCell
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Cliente
-                    </TableCell>
-                    <TableCell
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Productos
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Total
-                    </TableCell>
-                    <TableCell
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Tipo Pago
-                    </TableCell>
-                    <TableCell
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Estado
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ 
-                        fontWeight: 600, 
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(BRAND_COLOR, 0.1)
-                          : alpha(BRAND_COLOR, 0.05),
-                      }}
-                    >
-                      Acciones
-                    </TableCell>
+                    {[
+                      { label: "Fecha", align: "left" },
+                      { label: "Cliente", align: "left" },
+                      { label: "Productos", align: "left" },
+                      { label: "Total", align: "right" },
+                      { label: "Tipo Pago", align: "left" },
+                      { label: "Estado", align: "left" },
+                      { label: "Acciones", align: "right" }
+                    ].map((header, index) => (
+                      <TableCell 
+                        key={index}
+                        align={header.align as "left" | "right" | "center" | "justify" | "inherit"}
+                        sx={{ 
+                          fontWeight: 600, 
+                          position: 'sticky',
+                          top: 0,
+                          zIndex: 2,
+                          // Degradado rosado atractivo - igual que en InventoryTable
+                          bgcolor: theme.palette.mode === 'dark' 
+                            ? alpha(BRAND_COLOR, 0.1)
+                            : alpha(BRAND_COLOR, 0.05),
+                          // Base sólida para evitar transparencias
+                          '&:after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            height: '100%',
+                            zIndex: -1,
+                            backgroundColor: theme.palette.mode === 'dark' 
+                              ? 'rgba(30, 30, 30, 0.95)'
+                              : 'rgba(255, 255, 255, 0.95)',
+                          },
+                          borderBottom: `2px solid ${alpha(BRAND_COLOR, 0.4)}`,
+                          color: theme.palette.mode === 'dark' ? 'white' : 'rgba(0,0,0,0.87)',
+                          paddingTop: '12px',
+                          paddingBottom: '12px',
+                        }}
+                      >
+                        {header.label}
+                      </TableCell>
+                    ))}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -679,10 +650,19 @@ export function SalesTable({ userId }: { userId: string }) {
                       >
                         <TableCell>
                           <Typography variant="body2">
-                            {format(new Date(sale.created_at), 'dd/MM/yyyy', { locale: es })}
+                            {format(
+                              // Esto ajustará la fecha UTC a la zona horaria local
+                              new Date(sale.created_at),
+                              'dd/MM/yyyy',
+                              { locale: es, timeZone: 'America/Bogota' }
+                            )}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {format(new Date(sale.created_at), 'HH:mm', { locale: es })}
+                            {format(
+                              new Date(sale.created_at),
+                              'HH:mm',
+                              { locale: es, timeZone: 'America/Bogota' }
+                            )}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -893,7 +873,11 @@ export function SalesTable({ userId }: { userId: string }) {
                         Fecha
                       </Typography>
                       <Typography variant="body1">
-                        {format(new Date(selectedSale.created_at), 'dd MMMM yyyy', { locale: es })}
+                        {format(
+                          new Date(selectedSale.created_at),
+                          'dd MMMM yyyy',
+                          { locale: es, timeZone: 'America/Bogota' }
+                        )}
                       </Typography>
                     </Grid>
                   </Grid>
