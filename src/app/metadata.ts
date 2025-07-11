@@ -4,9 +4,6 @@ export const metadata: Metadata = {
   title: 'PowerMK - Sistema de Gestión Mary Kay',
   description: 'Sistema de Gestión Mary Kay',
   metadataBase: new URL('https://power-mk.vercel.app/'),
-
-  // Para páginas específicas, usar esta plantilla
-  // Se aplicará como "Nombre Página | PowerMK"
   template: '%s | PowerMK',
 
   openGraph: {
@@ -18,9 +15,9 @@ export const metadata: Metadata = {
     url: 'https://power-mk.vercel.app/',
     images: [
       {
-        url: 'https://power-mk.vercel.app/images/og-image.jpg', // Asegúrate de tener esta imagen
-        width: 1200,
-        height: 630,
+        url: '/logo.webp',
+        width: 512,
+        height: 512,
         alt: 'PowerMK Logo',
       },
     ],
@@ -28,7 +25,7 @@ export const metadata: Metadata = {
 
   icons: {
     icon: '/favicon.ico',
-    apple: '/apple-icon.png', // Opcional: añadir un ícono para Apple
+    apple: '/favicon.ico',
   },
 
   viewport: {

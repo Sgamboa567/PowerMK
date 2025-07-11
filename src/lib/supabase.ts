@@ -1,17 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Make sure environment variables are available
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL')
-}
+// Verificación de variables de entorno
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY')
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Faltan variables de entorno de Supabase')
 }
 
 export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       autoRefreshToken: true,
@@ -19,16 +18,6 @@ export const supabase = createClient(
     },
     db: {
       schema: 'public'
-    },
-    // Add error handling
-    global: {
-      fetch: (...args) => {
-        return fetch(...args)
-          .catch(error => {
-            console.error('Supabase fetch error:', error);
-            throw error;
-          });
-      }
     }
   }
 )
