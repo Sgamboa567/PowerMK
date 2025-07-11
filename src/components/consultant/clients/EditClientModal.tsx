@@ -15,6 +15,16 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { supabase } from '@/lib/supabase';
 
+interface Client {
+  id: string;
+  name: string;
+  document: string;
+  phone: string;
+  email: string;
+  birthday: string | null;
+  address?: string;
+}
+
 interface EditClientModalProps {
   open: boolean;
   onClose: () => void;
