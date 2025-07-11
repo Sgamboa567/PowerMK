@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "clean": "rm -rf .next",
-    "prebuild": "npm run clean"
+    "clean": "rimraf .next",
+    "local:build": "npm run clean && next build"
   },
   "dependencies": {
     "@auth/core": "0.34.2",
