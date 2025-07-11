@@ -1,10 +1,12 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'PowerMK - Sistema de Gestión Mary Kay',
+  title: {
+    default: 'PowerMK - Sistema de Gestión Mary Kay',
+    template: '%s | PowerMK'
+  },
   description: 'Sistema de Gestión Mary Kay',
   metadataBase: new URL('https://power-mk.vercel.app/'),
-  template: '%s | PowerMK',
 
   openGraph: {
     title: 'PowerMK - Sistema de Gestión Mary Kay',

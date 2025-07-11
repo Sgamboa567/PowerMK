@@ -4,7 +4,7 @@ const nextConfig = {
     domains: [
       'localhost',
       process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('https://', ''),
-      'your-supabase-project.supabase.co'
+      'ilkhshiherbjggmvexio.supabase.co'
     ].filter(Boolean),
   },
   // Optimizaciones para producción
