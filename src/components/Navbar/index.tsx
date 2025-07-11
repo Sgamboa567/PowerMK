@@ -315,7 +315,7 @@ export const Navbar = () => {
 
             <IconButton
               size="small"
-              onClick={(e) => toggleTheme(e)} // Asegúrate de pasar el evento
+              onClick={() => toggleTheme()} // Eliminado el evento como parámetro
               aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
               sx={{ 
                 color: theme.palette.text.primary,
