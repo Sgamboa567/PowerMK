@@ -72,13 +72,14 @@ export function ClientActivity() {
             id,
             created_at,
             amount,
+            client_id,
             clients (
               id,
               name,
               phone
             )
           `)
-          .eq('consultant_id', session.user.id)
+          .eq('user_id', session.user.id)  // Cambiado de 'consultant_id' a 'user_id' según tu esquema
           .order('created_at', { ascending: false })
           .limit(5);
 
@@ -88,9 +89,9 @@ export function ClientActivity() {
         const formattedActivities: Activity[] = sales?.map(sale => ({
           id: sale.id,
           type: 'purchase',
-          clientId: sale.clients.id,
-          clientName: sale.clients.name,
-          clientPhone: sale.clients.phone,
+          clientId: sale.clients?.id || '', // Acceso seguro con operador opcional
+          clientName: sale.clients?.name || 'Cliente',
+          clientPhone: sale.clients?.phone || '',
           date: sale.created_at,
           details: `Compra por $${sale.amount.toLocaleString()}`,
           amount: sale.amount
