@@ -25,7 +25,6 @@ import { useState, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
 import { alpha } from '@mui/material/styles';
 import { useThemeContext } from '@/components/providers/ThemeProvider';
@@ -156,18 +155,17 @@ export const Navbar = () => {
                     transition: 'all 0.2s ease',
                   }}
                 >
-                  <Image
-                    src="/logo.webp"
-                    alt="PowerMK"
-                    width={36}
-                    height={36}
-                    priority
-                    style={{
-                      objectFit: 'contain',
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      backgroundImage: "url('/logo.webp')",
+                      backgroundSize: 'contain',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
                       filter: theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : 'none',
                       transition: 'filter 0.3s ease',
                     }}
-                    unoptimized
                   />
                   <Typography 
                     variant="h6" 
@@ -490,16 +488,17 @@ export const Navbar = () => {
       >
         <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Image
-              src="/logo.webp"
-              alt="PowerMK"
-              width={32}
-              height={32}
-              style={{
-                objectFit: 'contain',
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                backgroundImage: "url('/logo.webp')",
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
                 filter: theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : 'none',
+                transition: 'filter 0.3s ease',
               }}
-              unoptimized
             />
             <Typography variant="h6" fontWeight={600}>
               Power<span style={{ color: BRAND_COLOR }}>MK</span>
