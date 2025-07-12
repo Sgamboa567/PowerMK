@@ -456,14 +456,21 @@ export function SaleForm({ open, onClose, onSaleAdded }: SaleFormProps) {
         // 3. Formatear los productos para el select
         const availableProducts = inventoryData
           .filter(item => item.products)
-          .map(item => ({
-            id: item.product_id,
-            name: item.products?.name || 'Producto sin nombre',
-            price: Number(item.products?.price || 0),
-            stock: Number(item.quantity || 0),
-            sku: item.products?.sku || '',
-            category: item.products?.category || 'Sin categoría'
-          }));
+          .map(item => {
+            // Determina si products es un array o un objeto
+            const productData = Array.isArray(item.products) 
+              ? item.products[0] 
+              : item.products;
+              
+            return {
+              id: item.product_id,
+              name: productData?.name || 'Producto sin nombre',
+              price: Number(productData?.price || 0),
+              stock: Number(item.quantity || 0),
+              sku: productData?.sku || '',
+              category: productData?.category || 'Sin categoría'
+            };
+          });
 
         setProducts(availableProducts);
       } catch (error) {
