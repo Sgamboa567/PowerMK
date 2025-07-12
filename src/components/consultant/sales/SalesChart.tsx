@@ -111,7 +111,9 @@ export function SalesChart() {
       tooltip: {
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
         titleColor: '#000',
-        titleFont: { weight: '500' },
+        titleFont: { 
+          weight: 'bold'  // Cambiado de '500' a 'bold'
+        },
         bodyColor: '#666',
         bodyFont: { size: 13 },
         borderColor: BRAND_COLOR,
@@ -148,7 +150,7 @@ export function SalesChart() {
         }
       }
     }
-  };
+  } as const;  // Añadir "as const" para ayudar a TypeScript con la inferencia de tipos
 
   if (loading) {
     return (
