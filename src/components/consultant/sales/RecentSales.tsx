@@ -58,7 +58,32 @@ export function RecentSales() {
           .limit(5);
 
         if (error) throw error;
-        setRecentSales(data || []);
+        
+        // Transformar los datos para que coincidan con la interfaz Sale
+        const formattedSales = data?.map(sale => ({
+          id: sale.id,
+          created_at: sale.created_at,
+          amount: sale.amount,
+          client: {
+            id: Array.isArray(sale.client) && sale.client.length > 0 
+              ? sale.client[0].id 
+              : '',
+            name: Array.isArray(sale.client) && sale.client.length > 0 
+              ? sale.client[0].name 
+              : 'Cliente'
+          },
+          products: Array.isArray(sale.products) 
+            ? sale.products.map(product => ({
+                id: product.id,
+                name: Array.isArray(product.name) && product.name.length > 0 
+                  ? product.name[0].name 
+                  : 'Producto',
+                quantity: product.quantity
+              }))
+            : []
+        })) || [];
+        
+        setRecentSales(formattedSales);
 
       } catch (error) {
         console.error('Error fetching recent sales:', error);
