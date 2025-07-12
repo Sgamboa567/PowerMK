@@ -20,6 +20,7 @@ import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar'; 
 
 const BRAND_COLOR = '#FF90B3';
 
@@ -135,6 +136,9 @@ export default function PaymentPage() {
           : 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(245,218,223,0.1) 100%)',
       }}
     >
+      {/* Agregar el componente Navbar */}
+      <Navbar />
+
       {/* Geometric background matching home page */}
       <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: theme.palette.mode === 'dark' ? 0.5 : 0.8 }}>
         {[...Array(3)].map((_, i) => (
@@ -237,7 +241,15 @@ export default function PaymentPage() {
                   </Typography>
                 </Box>
                 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+                  {/* Botón para regresar a la página de about/planes */}
+                  <Button 
+                    onClick={() => router.push('/about')}
+                    sx={{ color: theme.palette.text.secondary }}
+                  >
+                    Regresar a planes
+                  </Button>
+                  
                   <Button
                     variant="contained"
                     onClick={handleNext}

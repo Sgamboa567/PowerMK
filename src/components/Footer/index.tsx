@@ -6,7 +6,7 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import EmailIcon from '@mui/icons-material/Email';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion'; // Importar Variants
 import { useState } from 'react';
 
 // Constantes de diseño
@@ -43,39 +43,43 @@ export const Footer = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [hoveredIcon, setHoveredIcon] = useState<number | null>(null);
 
-  // Animación para el contenedor del footer
-  const footerVariants = {
+  // Animación para el contenedor del footer con tipado correcto
+  const footerVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
       opacity: 1, 
       y: 0,
       transition: { 
         duration: 0.6, 
-        ease: "easeOut" 
+        ease: "easeOut" as const // Usar 'as const' para tipado correcto
       }
     }
   };
 
   // Animación para los iconos sociales
-  const iconVariants = {
+  const iconVariants: Variants = {
+    initial: {}, // Estado inicial vacío
     hover: {
       y: -5,
       scale: 1.2,
       color: BRAND_COLOR,
       transition: {
         duration: 0.2,
-        ease: "easeInOut"
+        ease: "easeInOut" as const // Usar 'as const' para tipado correcto
       }
     }
   };
 
+  // Crear un componente Footer con motion
+  const MotionFooter = motion.footer;
+
   return (
-    <Box
-      component={motion.footer}
+    // Usar el componente de motion directamente en lugar de Box con component prop
+    <MotionFooter
       initial="hidden"
       animate="visible"
       variants={footerVariants}
-      sx={{
+      style={{
         width: '100%',
         background: theme.palette.mode === 'dark'
           ? 'linear-gradient(to bottom, rgba(26,26,26,0), rgba(26,26,26,0.8) 40%)'
@@ -86,8 +90,8 @@ export const Footer = () => {
             ? 'rgba(255,255,255,0.08)'
             : 'rgba(0,0,0,0.06)'
         }`,
-        py: { xs: 3, md: 4 },
         position: 'relative',
+        padding: isMobile ? '24px 0' : '32px 0',
       }}
     >
       {/* Elemento decorativo */}
@@ -158,6 +162,7 @@ export const Footer = () => {
             }}
           >
             © {currentYear} PowerMK. Desarrollado con{' '}
+            {/* Simplificar este componente para evitar anidamiento innecesario */}
             <Box
               component={motion.span}
               animate={{ 
@@ -175,13 +180,7 @@ export const Footer = () => {
                 color: BRAND_COLOR
               }}
             >
-              <motion.span
-                animate={{ scale: [1, 1.2, 1], color: [BRAND_COLOR, '#ff6b9d', BRAND_COLOR] }}
-                transition={{ repeat: Infinity, repeatType: 'loop', duration: 2, repeatDelay: 1 }}
-                sx={{ display: 'inline-block', color: BRAND_COLOR }}
-              >
-                ❤️
-              </motion.span>
+              ❤️
             </Box>{' '}
             por{' '}
             <Link
@@ -332,6 +331,6 @@ export const Footer = () => {
           ))}
         </Box>
       </Container>
-    </Box>
+    </MotionFooter>
   );
 };
