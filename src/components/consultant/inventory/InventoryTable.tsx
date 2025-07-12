@@ -260,6 +260,9 @@ export function InventoryTable({ userId, addOpen, setAddOpen }: Props) {
     return <Alert severity="error">{error}</Alert>;
   }
 
+  // Agregar esta línea después de las importaciones
+  const MotionTableRow = motion(TableRow);
+
   return (
     <>
       {/* Resumen del inventario */}
@@ -553,13 +556,12 @@ export function InventoryTable({ userId, addOpen, setAddOpen }: Props) {
                     {filteredInventory
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((item) => (
-                        <motion.tr
+                        <MotionTableRow
                           key={item.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          component={TableRow}
                           sx={{
                             '&:hover': {
                               bgcolor: theme.palette.mode === 'dark' 
@@ -665,7 +667,7 @@ export function InventoryTable({ userId, addOpen, setAddOpen }: Props) {
                               </IconButton>
                             </Tooltip>
                           </TableCell>
-                        </motion.tr>
+                        </MotionTableRow>
                       ))}
                   </AnimatePresence>
                 </TableBody>
