@@ -47,7 +47,12 @@ interface RawInventoryData {
     sku: string;
     price: number;
     category: string;
-  };
+  } | {
+    name: string;
+    sku: string;
+    price: number;
+    category: string;
+  }[]; // Permite que product sea un objeto o un array
 }
 
 interface Props {
@@ -106,18 +111,23 @@ export function InventoryTable({ userId, addOpen, setAddOpen }: Props) {
 
       if (error) throw error;
 
-      const formattedData: InventoryItem[] = (data as RawInventoryData[]).map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        min_stock: item.min_stock,
-        product: {
-          name: item.product.name,
-          sku: item.product.sku,
-          price: item.product.price,
+      const formattedData: InventoryItem[] = data.map(item => {
+        // Verificar si product es un array o un objeto único
+        const productData = Array.isArray(item.product) ? item.product[0] : item.product;
+        
+        return {
+          id: item.id,
+          quantity: item.quantity,
           min_stock: item.min_stock,
-          category: item.product.category
-        }
-      }));
+          product: {
+            name: productData.name,
+            sku: productData.sku,
+            price: productData.price,
+            min_stock: item.min_stock,
+            category: productData.category
+          }
+        };
+      });
 
       setInventory(formattedData);
       setFilteredInventory(formattedData);
