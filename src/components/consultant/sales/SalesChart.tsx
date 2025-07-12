@@ -129,7 +129,7 @@ export function SalesChart() {
             return 'Ventas del día';
           },
           label: function(item) {
-            return '$' + item.raw.toLocaleString();
+            return '$' + (item.raw as number).toLocaleString();
           }
         }
       }
