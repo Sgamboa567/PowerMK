@@ -1,8 +1,7 @@
-import { useContext } from 'react';
-import { ThemeContext } from '@/components/providers/ThemeProvider';
+import { useThemeContext } from '@/components/providers/ThemeProvider';
 
 export const useThemeToggle = () => {
-  const context = useContext(ThemeContext);
+  const context = useThemeContext();
   
   if (!context) {
     throw new Error('useThemeToggle must be used within a ThemeProvider');
