@@ -12,8 +12,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const timeoutMs = 10000; // 10 segundos
 
-// Crear una función de fetch con timeout
-const fetchWithTimeout = (url, options) => {
+// Crear una función de fetch con timeout con tipos TypeScript adecuados
+const fetchWithTimeout = (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
   const controller = new AbortController();
   const { signal } = controller;
   
