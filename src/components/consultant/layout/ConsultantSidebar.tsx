@@ -6,14 +6,15 @@ import {
   IconButton,
   useTheme,
   useMediaQuery,
-  Avatar,         // Added Avatar import
+  Avatar,         
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
   Typography,
   Divider,
-  Collapse
+  Collapse,
+  Tooltip   
 } from '@mui/material';
 import {
   AccountCircle,
