@@ -15,7 +15,8 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartData
+  ChartData,
+  ChartOptions
 } from 'chart.js';
 
 // Registrar componentes de Chart.js
@@ -101,7 +102,8 @@ export function SalesChart() {
     fetchSalesData();
   }, [session]);
 
-  const options = {
+  // Definir las opciones sin el "as const" y sin la función en borderDash
+  const options: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -112,17 +114,23 @@ export function SalesChart() {
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
         titleColor: '#000',
         titleFont: { 
-          weight: 'bold'
+          weight: 'bold' // Usar 'bold' en lugar de '500'
         },
         bodyColor: '#666',
-        bodyFont: { size: 13 },
+        bodyFont: { 
+          size: 13 
+        },
         borderColor: BRAND_COLOR,
         borderWidth: 1,
         padding: 12,
         displayColors: false,
         callbacks: {
-          title: (items: any) => 'Ventas del día',
-          label: (item: any) => `$${item.raw.toLocaleString()}`
+          title: function(items) {
+            return 'Ventas del día';
+          },
+          label: function(item) {
+            return '$' + item.raw.toLocaleString();
+          }
         }
       }
     },
@@ -139,27 +147,21 @@ export function SalesChart() {
       },
       y: {
         beginAtZero: true,
+        // Eliminar las propiedades problemáticas de grid
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
-          lineWidth: 1,
-          drawBorder: true,
-          drawOnChartArea: true,
-          drawTicks: true,
-          borderDash: function(context: any) {
-            return [5, 5];
-          }
+          color: 'rgba(0, 0, 0, 0.1)'
         },
         ticks: {
           font: {
             size: 12
           },
-          callback: function(value: number) {
+          callback: function(value) {
             return '$' + value.toLocaleString();
           }
         }
       }
     }
-  } as const;  // Añadir "as const" para ayudar a TypeScript con la inferencia de tipos
+  };
 
   if (loading) {
     return (
