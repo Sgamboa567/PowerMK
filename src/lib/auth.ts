@@ -3,21 +3,14 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { supabase } from './supabase';
 import { createClient } from '@supabase/supabase-js';
 
-// Definición de la interfaz de usuario para mejorar el tipado
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  document: string;
-  role: string;
-  image?: string | null;
-}
-
 // Cliente para operaciones administrativas
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_KEY || ''
-);
+// Solo crearlo si las variables de entorno están disponibles
+const supabaseAdmin = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY 
+  ? createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_KEY
+    )
+  : null;
 
 export const authOptions: AuthOptions = {
   providers: [

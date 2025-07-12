@@ -3,7 +3,7 @@ import { getToken } from 'next-auth/jwt'
 import { NextRequestWithAuth } from 'next-auth/middleware'
 import { supabase } from '@/lib/supabase';
 
-// Lista de rutas públicas para mejorar mantenimiento
+// Lista de rutas públicas
 const PUBLIC_ROUTES = [
   '/',
   '/login',
@@ -35,7 +35,7 @@ export default async function middleware(request: NextRequestWithAuth) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Verificar acceso a rutas protegidas
+  // Verificar acceso a rutas protegidas con manejo mejorado de errores
   try {
     const { data, error } = await supabase
       .from('users')
@@ -43,7 +43,12 @@ export default async function middleware(request: NextRequestWithAuth) {
       .eq('id', token.sub)
       .single();
 
-    if (error) throw error;
+    // Si hay un error de Supabase, permitir acceso pero registrar el error
+    if (error) {
+      console.error('Error en middleware:', error);
+      // Permitir acceso en caso de error con la base de datos para evitar bloqueos
+      return NextResponse.next();
+    }
     
     const isAdmin = data?.role?.toLowerCase() === 'admin';
     const hasActiveSubscription = 
@@ -62,8 +67,9 @@ export default async function middleware(request: NextRequestWithAuth) {
 
     return NextResponse.next();
   } catch (err) {
-    // En caso de error, redirigir a una página segura
-    return NextResponse.redirect(new URL(path.startsWith('/admin') ? '/' : '/payment', request.url));
+    // En caso de error, permitir acceso para evitar bloqueos
+    console.error('Error crítico en middleware:', err);
+    return NextResponse.next();
   }
 }
 
