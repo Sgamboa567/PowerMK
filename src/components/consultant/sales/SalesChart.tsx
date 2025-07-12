@@ -112,7 +112,7 @@ export function SalesChart() {
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
         titleColor: '#000',
         titleFont: { 
-          weight: 'bold'  // Cambiado de '500' a 'bold'
+          weight: 'bold'
         },
         bodyColor: '#666',
         bodyFont: { size: 13 },
@@ -140,13 +140,22 @@ export function SalesChart() {
       y: {
         beginAtZero: true,
         grid: {
-          borderDash: [5, 5]
+          color: 'rgba(0, 0, 0, 0.1)',
+          lineWidth: 1,
+          drawBorder: true,
+          drawOnChartArea: true,
+          drawTicks: true,
+          borderDash: function(context: any) {
+            return [5, 5];
+          }
         },
         ticks: {
           font: {
             size: 12
           },
-          callback: (value: number) => `$${value.toLocaleString()}`
+          callback: function(value: number) {
+            return '$' + value.toLocaleString();
+          }
         }
       }
     }
