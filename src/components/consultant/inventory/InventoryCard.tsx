@@ -35,11 +35,7 @@ export function InventoryCard() {
             quantity,
             min_stock,
             product_id,
-            products(
-              id,
-              name,
-              image_url
-            )
+            products!inner(id, name, image_url)
           `)
           .eq('user_id', session.user.id);
 
@@ -48,13 +44,20 @@ export function InventoryCard() {
         // Procesar productos con bajo stock
         const lowStockItems = inventoryData
           .filter(item => item.quantity <= item.min_stock)
-          .map(item => ({
-            id: item.products.id,
-            name: item.products.name,
-            stock: item.quantity,
-            min_stock: item.min_stock,
-            image_url: item.products.image_url
-          }))
+          .map(item => {
+            // Determinar si products es un array o un objeto
+            const productData = Array.isArray(item.products) 
+              ? item.products[0]  // Usar el primer producto si es array
+              : item.products;    // Usar directamente si es objeto
+              
+            return {
+              id: productData?.id || item.product_id, // Fallback al ID del producto
+              name: productData?.name || 'Producto sin nombre',
+              stock: item.quantity,
+              min_stock: item.min_stock,
+              image_url: productData?.image_url
+            };
+          })
           .slice(0, 5); // Mostrar solo los 5 más críticos
 
         setLowStock(lowStockItems);
