@@ -5,22 +5,28 @@ import { motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motio
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useTheme } from '@mui/material/styles';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { keyframes } from '@mui/system';
-import { supabase } from '@/lib/supabase'; // Asegúrate de que esta importación esté disponible
+import { supabase } from '@/lib/supabase';
 
+// Constantes
+const BRAND_COLOR = '#FF90B3';
+const GOLD_COLOR = '#c59d5f';
+
+// Keyframes optimizados
 const glowAnimation = keyframes`
   0% { opacity: 0.4 }
   50% { opacity: 0.7 }
   100% { opacity: 0.4 }
 `;
 
+// Contenido centralizado para fácil mantenimiento
 const slides = [
   {
-    title: 'Bienvenido/a a PowerMK',
+    title: 'Bienvenida a PowerMK',
     subtitle: 'Tu plataforma integral de gestión Mary Kay',
-    color: '#FF90B3'
+    color: BRAND_COLOR
   },
   {
     title: 'Gestiona tu Negocio',
@@ -34,84 +40,69 @@ const slides = [
   }
 ];
 
-// Función actualizada para manejar la navegación correctamente
-const handleNavigation = async (session: any) => {
-  if (!session) {
-    console.log("No hay sesión activa");
-    return '/login';
-  }
-
-  console.log("Objeto completo de sesión:", JSON.stringify(session, null, 2));
-  
-  // El ID puede estar en diferentes ubicaciones dependiendo de cómo configuraste NextAuth
-  const userId = session.user?.id || session.sub || session.user?.sub;
-  
-  if (!userId) {
-    console.error("No se pudo encontrar el ID del usuario en la sesión");
-    return '/login';
-  }
-
-  try {
-    // Obtener información completa del usuario desde Supabase
-    const { data, error } = await supabase
-      .from('users')
-      .select('role, subscription_status, subscription_end_date')
-      .eq('id', userId)
-      .single();
-
-    console.log("Datos obtenidos de Supabase:", data);
-
-    if (error) throw error;
-
-    // Verificar rol y estado de suscripción
-    const isAdmin = data?.role?.toLowerCase() === 'admin';
-    const hasActiveSubscription = 
-      data?.subscription_status === 'active' && 
-      (data?.subscription_end_date ? new Date(data.subscription_end_date) > new Date() : true);
-
-    console.log("Análisis de rol:", { 
-      userId, 
-      role: data?.role, 
-      isAdmin,
-      hasActiveSubscription 
-    });
-
-    // Redirigir según el rol y estado de suscripción
-    if (isAdmin) {
-      return '/admin';
-    } else if (data?.role?.toLowerCase() === 'consultant' || data?.role?.toLowerCase() === 'director') {
-      // Si es consultor o director, verificar suscripción
-      if (hasActiveSubscription) {
-        return data.role.toLowerCase() === 'consultant' 
-          ? '/consultant'
-          : '/director';
-      } else {
-        return '/payment';
-      }
-    } else {
-      return '/';
-    }
-  } catch (error) {
-    console.error('Error verificando el rol del usuario:', error);
-    console.log('Session user ID:', userId);
-    console.log('Session info:', session);
-    return '/';
-  }
-};
-
 export const HeroBanner = () => {
+  // Hooks
   const router = useRouter();
   const { data: session } = useSession();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
+  
+  // Estados
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Animaciones
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const cursorX = useSpring(mouseX, { damping: 25, stiffness: 150 });
   const cursorY = useSpring(mouseY, { damping: 25, stiffness: 150 });
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [navigationUrl, setNavigationUrl] = useState('');
 
+  // Memoizar la función de navegación para evitar re-renders
+  const handleNavigation = useCallback(async (session: any) => {
+    if (!session) {
+      return '/login';
+    }
+    
+    const userId = session.user?.id;
+    
+    if (!userId) {
+      return '/login';
+    }
+
+    try {
+      // Obtener información de usuario de Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .select('role, subscription_status, subscription_end_date')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      // Verificar rol y estado de suscripción
+      const isAdmin = data?.role?.toLowerCase() === 'admin';
+      const hasActiveSubscription = 
+        data?.subscription_status === 'active' && 
+        (data?.subscription_end_date ? new Date(data.subscription_end_date) > new Date() : true);
+
+      // Redirigir según rol y suscripción
+      if (isAdmin) {
+        return '/admin';
+      } else if (data?.role?.toLowerCase() === 'consultant' || data?.role?.toLowerCase() === 'director') {
+        return hasActiveSubscription
+          ? data.role.toLowerCase() === 'consultant' ? '/consultant' : '/director'
+          : '/payment';
+      } else {
+        return '/';
+      }
+    } catch (error) {
+      console.error('Error verificando el rol del usuario:', error);
+      return '/';
+    }
+  }, []);
+
+  // Cambio automático de slides
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -123,30 +114,28 @@ export const HeroBanner = () => {
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    
     return () => {
       clearInterval(interval);
       window.removeEventListener('mousemove', handleMouseMove);
     };
-  }, []);
+  }, [mouseX, mouseY]);
 
-  // Manejar el clic en "Comenzar ahora"
+  // Manejar clic en "Comenzar ahora"
   const handleStartNow = async () => {
     setIsProcessing(true);
     try {
-      console.log("Iniciando navegación con sesión:", session?.user?.email);
       const url = await handleNavigation(session);
-      console.log("URL de destino:", url);
-      setNavigationUrl(url);
       router.push(url);
     } catch (error) {
       console.error("Error durante la navegación:", error);
-      // Fallback en caso de error, redireccionar al login
       router.push('/login');
     } finally {
       setIsProcessing(false);
     }
   };
 
+  // Variantes de animación para las slides
   const variants = {
     enter: (direction: number) => ({
       x: direction > 0 ? 1000 : -1000,
@@ -171,20 +160,20 @@ export const HeroBanner = () => {
         position: 'relative',
         overflow: 'hidden',
         background: theme.palette.mode === 'dark' 
-          ? 'linear-gradient(135deg, rgba(26,26,26,0.98) 0%, rgba(26,26,26,1) 100%)'
-          : 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(245,218,223,0.1) 100%)',
+          ? 'linear-gradient(135deg, #1A1A1A 0%, #242424 100%)'
+          : 'linear-gradient(135deg, #FFFFFF 0%, #F9F0F2 100%)',
       }}
     >
-      {/* Modern geometric background */}
-      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: theme.palette.mode === 'dark' ? 0.5 : 0.8 }}>
+      {/* Fondo geométrico con animación sutil */}
+      <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: theme.palette.mode === 'dark' ? 0.6 : 0.7 }}>
         {[...Array(3)].map((_, i) => (
           <motion.div
             key={i}
             style={{
               position: 'absolute',
               background: theme.palette.mode === 'dark'
-                ? `linear-gradient(135deg, ${slides[currentSlide].color}15, ${slides[currentSlide].color}05)`
-                : `linear-gradient(135deg, ${slides[currentSlide].color}30, ${slides[currentSlide].color}10)`,
+                ? `linear-gradient(135deg, ${slides[currentSlide].color}15, ${GOLD_COLOR}10)`
+                : `linear-gradient(135deg, ${slides[currentSlide].color}20, ${GOLD_COLOR}10)`,
               clipPath: 'polygon(25% 0%, 100% 0%, 75% 100%, 0% 100%)',
               width: isMobile ? '150%' : '100%',
               height: isMobile ? '50%' : '100%',
@@ -203,6 +192,52 @@ export const HeroBanner = () => {
             }}
           />
         ))}
+        
+        {/* Elementos decorativos para estilo Mary Kay */}
+        <Box
+          component={motion.div}
+          animate={{
+            opacity: [0.3, 0.5, 0.3],
+            scale: [1, 1.05, 1],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            repeatType: 'reverse',
+          }}
+          sx={{
+            position: 'absolute',
+            top: '20%',
+            right: '15%',
+            width: { xs: 100, md: 200 },
+            height: { xs: 100, md: 200 },
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${GOLD_COLOR}20 0%, transparent 70%)`,
+          }}
+        />
+        
+        <Box
+          component={motion.div}
+          animate={{
+            opacity: [0.4, 0.6, 0.4],
+            scale: [1, 1.03, 1],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            repeatType: 'reverse',
+            delay: 1,
+          }}
+          sx={{
+            position: 'absolute',
+            bottom: '15%',
+            left: '10%',
+            width: { xs: 120, md: 250 },
+            height: { xs: 120, md: 250 },
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${BRAND_COLOR}15 0%, transparent 70%)`,
+          }}
+        />
       </Box>
 
       <Container 
@@ -221,7 +256,10 @@ export const HeroBanner = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.5 }}
+            transition={{ 
+              duration: 0.6, 
+              ease: [0.43, 0.13, 0.23, 0.96] 
+            }}
             style={{
               width: '100%',
               height: '100%',
@@ -235,49 +273,77 @@ export const HeroBanner = () => {
               sx={{ 
                 maxWidth: { xs: '95%', sm: '800px' }, 
                 margin: '0 auto',
-                px: { xs: 2, sm: 4 }
+                px: { xs: 2, sm: 4 },
+                py: { xs: 4, md: 0 },
               }}
             >
-              <Typography
-                variant="h1"
-                sx={{
-                  fontSize: { xs: '2rem', sm: '3rem', md: '4.5rem' },
-                  fontWeight: 800,
-                  background: theme.palette.mode === 'dark'
-                    ? `linear-gradient(135deg, ${slides[currentSlide].color} 0%, #F5DADF 100%)`
-                    : `linear-gradient(135deg, ${slides[currentSlide].color} 0%, #FF1493 100%)`,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  mb: { xs: 2, sm: 3 },
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1.2,
-                  filter: theme.palette.mode === 'dark' ? 'none' : 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))',
-                }}
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.5 }}
               >
-                {slides[currentSlide].title}
-              </Typography>
-              <Typography
-                variant="h4"
-                sx={{
-                  color: theme.palette.mode === 'dark' ? '#F5DADF' : '#666',
-                  fontSize: { xs: '1rem', sm: '1.2rem', md: '1.5rem' },
-                  fontWeight: 500,
-                  mb: { xs: 3, sm: 5 },
-                  opacity: 0.9,
-                  letterSpacing: '0.02em',
-                  maxWidth: '90%',
-                  margin: '0 auto',
-                }}
+                <Typography
+                  variant="h1"
+                  sx={{
+                    fontSize: { xs: '2.5rem', sm: '3.5rem', md: '5rem' },
+                    fontWeight: 800,
+                    background: theme.palette.mode === 'dark'
+                      ? `linear-gradient(135deg, ${slides[currentSlide].color} 0%, #F5DADF 100%)`
+                      : `linear-gradient(135deg, ${slides[currentSlide].color} 0%, ${GOLD_COLOR} 100%)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    mb: { xs: 2, sm: 3 },
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.1,
+                    filter: theme.palette.mode === 'dark' 
+                      ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' 
+                      : 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))',
+                    textAlign: 'center',
+                  }}
+                >
+                  {slides[currentSlide].title}
+                </Typography>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
               >
-                {slides[currentSlide].subtitle}
-              </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: theme.palette.mode === 'dark' ? '#F5DADF' : '#444',
+                    fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.6rem' },
+                    fontWeight: 500,
+                    mb: { xs: 4, sm: 6 },
+                    opacity: 0.9,
+                    letterSpacing: '0.01em',
+                    maxWidth: '85%',
+                    margin: '0 auto',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {slides[currentSlide].subtitle}
+                </Typography>
+              </motion.div>
 
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
               >
-                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    gap: { xs: 1.5, sm: 3 }, 
+                    justifyContent: 'center',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    alignItems: 'center',
+                    maxWidth: { xs: '100%', sm: '80%', md: '75%' },
+                    mx: 'auto',
+                  }}
+                >
                   <Button
                     variant="contained"
                     size="large"
@@ -285,25 +351,41 @@ export const HeroBanner = () => {
                     disabled={isProcessing}
                     sx={{
                       bgcolor: slides[currentSlide].color,
-                      backdropFilter: 'blur(10px)',
                       color: 'white',
                       fontSize: { xs: '1rem', sm: '1.1rem' },
                       py: { xs: 1.5, sm: 2 },
-                      px: { xs: 3, sm: 4 },
-                      borderRadius: '8px',
+                      px: { xs: 3, sm: 5 },
+                      borderRadius: '12px',
                       textTransform: 'none',
                       transition: 'all 0.4s ease',
+                      fontWeight: 600,
+                      width: isMobile ? '100%' : 'auto',
+                      boxShadow: `0 8px 20px ${slides[currentSlide].color}40`,
                       '&:hover': {
                         bgcolor: slides[currentSlide].color,
-                        transform: 'translateY(-3px)',
-                        boxShadow: `0 12px 40px ${slides[currentSlide].color}40`,
+                        transform: 'translateY(-4px)',
+                        boxShadow: `0 12px 30px ${slides[currentSlide].color}60`,
                       },
+                      letterSpacing: '0.5px',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                        transform: 'translateX(-100%)',
+                        animation: isProcessing ? 'none' : `${glowAnimation} 2s infinite`,
+                      }
                     }}
                     endIcon={
                       isProcessing ? (
                         <CircularProgress size={20} color="inherit" />
                       ) : (
-                        <ArrowForwardIcon sx={{ transition: 'transform 0.3s ease' }} />
+                        <ArrowForwardIcon />
                       )
                     }
                   >
@@ -315,20 +397,28 @@ export const HeroBanner = () => {
                     size="large"
                     onClick={() => router.push('/about')}
                     sx={{
-                      borderColor: slides[currentSlide].color,
-                      color: theme.palette.mode === 'dark' ? '#F5DADF' : '#666',
+                      borderColor: GOLD_COLOR,
+                      borderWidth: 2,
+                      color: theme.palette.mode === 'dark' ? '#F5DADF' : '#444',
                       fontSize: { xs: '1rem', sm: '1.1rem' },
-                      py: { xs: 1.5, sm: 2 },
-                      px: { xs: 3, sm: 4 },
-                      borderRadius: '8px',
+                      py: { xs: 1.5, sm: 1.9 },
+                      px: { xs: 3, sm: 5 },
+                      borderRadius: '12px',
                       textTransform: 'none',
+                      fontWeight: 600,
+                      width: isMobile ? '100%' : 'auto',
                       transition: 'all 0.4s ease',
+                      backdropFilter: 'blur(5px)',
+                      background: 'transparent',
                       '&:hover': {
-                        borderColor: slides[currentSlide].color,
-                        bgcolor: 'transparent',
-                        transform: 'translateY(-3px)',
-                        boxShadow: `0 12px 40px ${slides[currentSlide].color}20`,
+                        borderColor: GOLD_COLOR,
+                        bgcolor: theme.palette.mode === 'dark' 
+                          ? 'rgba(197, 157, 95, 0.1)'
+                          : 'rgba(197, 157, 95, 0.05)',
+                        transform: 'translateY(-4px)',
+                        boxShadow: `0 12px 30px ${GOLD_COLOR}20`,
                       },
+                      letterSpacing: '0.5px',
                     }}
                   >
                     Conocer más
@@ -339,15 +429,20 @@ export const HeroBanner = () => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Modern slide indicators */}
+        {/* Indicadores de slides con estilo mejorado */}
         <Box
           sx={{
             position: 'absolute',
-            bottom: { xs: 20, sm: 40 },
+            bottom: { xs: 30, sm: 50 },
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
-            gap: 1,
+            gap: 1.5,
+            background: 'rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 5,
+            padding: '10px 16px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
           }}
         >
           {slides.map((_, index) => (
@@ -356,18 +451,49 @@ export const HeroBanner = () => {
               onClick={() => setCurrentSlide(index)}
               style={{
                 cursor: 'pointer',
-                height: '4px',
-                width: currentSlide === index ? '24px' : '12px',
-                backgroundColor: currentSlide === index ? slides[currentSlide].color : '#F5DADF30',
-                borderRadius: '2px',
+                height: '6px',
+                backgroundColor: currentSlide === index 
+                  ? slides[currentSlide].color 
+                  : theme.palette.mode === 'dark' 
+                    ? 'rgba(255,255,255,0.3)'
+                    : 'rgba(0,0,0,0.2)',
+                borderRadius: '3px',
               }}
-              whileHover={{ scale: 1.1 }}
               animate={{
-                width: currentSlide === index ? '24px' : '12px',
-                transition: { duration: 0.3 }
+                width: currentSlide === index ? '28px' : '14px',
               }}
+              whileHover={{ 
+                scale: 1.1,
+                backgroundColor: currentSlide === index 
+                  ? slides[currentSlide].color 
+                  : theme.palette.mode === 'dark'
+                    ? 'rgba(255,255,255,0.5)'
+                    : 'rgba(0,0,0,0.3)',
+              }}
+              transition={{ duration: 0.3 }}
             />
           ))}
+        </Box>
+        
+        {/* Elemento de marca de agua Mary Kay */}
+        <Box
+          component={motion.div}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.04 }}
+          transition={{ delay: 1, duration: 1 }}
+          sx={{
+            position: 'absolute',
+            bottom: '10%',
+            right: '5%',
+            fontFamily: 'serif',
+            fontSize: { xs: '5rem', md: '10rem' },
+            color: theme.palette.mode === 'dark' ? '#FFF' : '#000',
+            fontWeight: 'bold',
+            pointerEvents: 'none',
+            display: { xs: 'none', md: 'block' }
+          }}
+        >
+          MK
         </Box>
       </Container>
     </Box>

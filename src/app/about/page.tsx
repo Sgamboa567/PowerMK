@@ -18,6 +18,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { Footer } from '@/components/Footer';
+import { Navbar } from '@/components/Navbar'; // Importar el componente Navbar
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 
@@ -122,6 +123,9 @@ export default function AboutPage() {
           : 'linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(245,218,223,0.1) 100%)',
       }}
     >
+      {/* Agregar el componente Navbar */}
+      <Navbar />
+      
       {/* Geometric background matching home page */}
       <Box sx={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: theme.palette.mode === 'dark' ? 0.5 : 0.8 }}>
         {[...Array(3)].map((_, i) => (

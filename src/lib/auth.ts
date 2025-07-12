@@ -3,15 +3,6 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { supabase } from './supabase';
 import { createClient } from '@supabase/supabase-js';
 
-// Cliente para operaciones administrativas
-// Solo crearlo si las variables de entorno están disponibles
-const supabaseAdmin = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY 
-  ? createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_KEY
-    )
-  : null;
-
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -21,61 +12,97 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
+        // Log detallado para depuración
+        console.log('⭐️ Intento de autorización iniciado');
+        
         if (!credentials?.document || !credentials?.password) {
+          console.log('❌ Faltan credenciales');
           return null;
         }
 
         try {
           // Trim y normalización del documento
           const normalizedDocument = credentials.document.trim();
+          console.log(`🔍 Buscando usuario con documento: ${normalizedDocument}`);
           
-          // Buscar el usuario por documento
+          // OPCIÓN 1: Buscar por documento
+          console.log('📊 Consultando Supabase por documento...');
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('id, email, name, document, password, role, image')
+            .select('*') // Seleccionar todos los campos para depuración
             .eq('document', normalizedDocument)
             .single();
 
-          if (userError || !userData) {
+          if (userError) {
+            console.error('❌ Error al buscar por documento:', userError.message);
+            // Continuar para intentar por email
+          } else if (userData) {
+            console.log('✅ Usuario encontrado por documento');
+            
+            // Verificación de contraseña
+            console.log('🔐 Verificando contraseña...');
+            console.log('Contraseña proporcionada:', credentials.password);
+            console.log('Contraseña almacenada (hash):', userData.password ? '[PRESENTE]' : '[AUSENTE]');
+            
+            if (userData.password === credentials.password) {
+              console.log('✅ Contraseña correcta, autenticación exitosa');
+              // Devolver el usuario para crear sesión
+              return {
+                id: userData.id,
+                email: userData.email || 'no-email@example.com',
+                name: userData.name || 'Usuario',
+                role: userData.role || 'user',
+                document: userData.document,
+                image: userData.image || null
+              };
+            } else {
+              console.log('❌ Contraseña incorrecta');
+              return null;
+            }
+          } else {
+            console.log('❓ Usuario no encontrado por documento, intentando con email');
+          }
+          
+          // OPCIÓN 2: Intentar buscar por correo electrónico
+          console.log('📧 Consultando Supabase por email...');
+          const { data: emailUser, error: emailError } = await supabase
+            .from('users')
+            .select('*') // Seleccionar todos los campos para depuración
+            .eq('email', normalizedDocument)
+            .single();
+              
+          if (emailError) {
+            console.error('❌ Error al buscar por email:', emailError.message);
             return null;
           }
-
-          // Verificación simple de contraseña (texto plano)
-          if (userData.password === credentials.password) {
-            // Devolver el usuario para crear sesión
+            
+          if (!emailUser) {
+            console.log('❌ Usuario no encontrado por ningún método');
+            return null;
+          }
+            
+          console.log('✅ Usuario encontrado por email');
+          
+          // Verificación de contraseña
+          console.log('🔐 Verificando contraseña para usuario por email...');
+          
+          if (emailUser.password === credentials.password) {
+            console.log('✅ Contraseña correcta, autenticación exitosa');
             return {
-              id: userData.id,
-              email: userData.email,
-              name: userData.name,
-              role: userData.role,
-              document: userData.document,
-              image: userData.image || null
+              id: emailUser.id,
+              email: emailUser.email || 'no-email@example.com',
+              name: emailUser.name || 'Usuario',
+              role: emailUser.role || 'user',
+              document: emailUser.document,
+              image: emailUser.image || null
             };
           }
           
-          // Intento alternativo con Supabase Auth si la verificación directa falla
-          try {
-            const { data, error } = await supabase.auth.signInWithPassword({
-              email: userData.email,
-              password: credentials.password,
-            });
-
-            if (error || !data.user) {
-              return null;
-            }
-
-            return {
-              id: userData.id,
-              email: userData.email,
-              name: userData.name,
-              role: userData.role,
-              document: userData.document,
-              image: userData.image || null
-            };
-          } catch {
-            return null;
-          }
-        } catch {
+          console.log('❌ Contraseña incorrecta para usuario encontrado por email');
+          return null;
+          
+        } catch (error) {
+          console.error('⚠️ Error inesperado en el proceso de autenticación:', error);
           return null;
         }
       }
@@ -95,9 +122,9 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.role = (user as any).role;
-        token.document = (user as any).document;
-        token.image = user.image || null;
+        token.role = user.role;
+        token.document = user.document;
+        token.image = user.image;
       }
       return token;
     },
@@ -106,10 +133,10 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.document = token.document as string;
-        // La propiedad image ya existe en session.user
+        session.user.image = token.image as string;
       }
       return session;
     }
   },
-  debug: process.env.NODE_ENV === 'development'
+  debug: true // Habilitamos el modo debug para ver más detalles
 };
