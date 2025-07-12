@@ -103,8 +103,14 @@ export function FollowupList() {
           })
           .filter(Boolean)
           .sort((a, b) => {
-            const priorityOrder = { high: 0, medium: 1, low: 2 };
-            return priorityOrder[a!.priority] - priorityOrder[b!.priority];
+            // Define el objeto con anotación de tipo
+            const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+            
+            // Verifica que a y b no son null/undefined y maneja casos donde la prioridad podría no estar en priorityOrder
+            const priorityA = a?.priority && (a.priority in priorityOrder) ? priorityOrder[a.priority] : 3;
+            const priorityB = b?.priority && (b.priority in priorityOrder) ? priorityOrder[b.priority] : 3;
+            
+            return priorityA - priorityB;
           });
 
         setFollowUps(processedFollowUps as FollowUp[]);
