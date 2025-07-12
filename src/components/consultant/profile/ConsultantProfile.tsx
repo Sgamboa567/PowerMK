@@ -10,7 +10,9 @@ import {
   Badge,
   useTheme,
   CircularProgress,
-  Button
+  Button,
+  Grid,  // Añadir Grid a las importaciones
+  Chip   // También falta la importación de Chip para los logros
 } from '@mui/material';
 import { supabase } from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
