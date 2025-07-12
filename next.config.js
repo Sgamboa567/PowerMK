@@ -5,6 +5,7 @@ const nextConfig = {
       'localhost',
       'ilkhshiherbjggmvexio.supabase.co'
     ],
+    unoptimized: true // Añadir esta línea para desactivar la optimización
   },
   // Optimizaciones para producción
   swcMinify: true,
