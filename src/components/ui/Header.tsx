@@ -1,11 +1,10 @@
 import React from 'react';
-import { AppBar, Toolbar, IconButton, Typography, useTheme } from '@mui/material';
+import { AppBar, Toolbar, IconButton, Typography } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
-import { useThemeToggle } from '@/hooks/useThemeToggle';
+import { useThemeContext } from '@/components/providers/ThemeProvider';
 
 const Header: React.FC = () => {
-    const theme = useTheme();
-    const { toggleTheme } = useThemeToggle();
+    const { theme, isDarkMode, toggleTheme } = useThemeContext();
 
     return (
         <AppBar 
@@ -25,7 +24,7 @@ const Header: React.FC = () => {
                     PowerMK
                 </Typography>
                 <IconButton onClick={toggleTheme} color="inherit">
-                    {theme.palette.mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
+                    {isDarkMode ? <Brightness7 /> : <Brightness4 />}
                 </IconButton>
             </Toolbar>
         </AppBar>
