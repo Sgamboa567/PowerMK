@@ -26,10 +26,10 @@ export const authOptions: AuthOptions = {
           // Trim y normalización del documento
           const normalizedDocument = credentials.document.trim();
           
-          // Buscar el usuario por documento
+          // Buscar el usuario por documento - MODIFICAR AQUÍ PARA INCLUIR IMAGE
           const { data: userData, error: userError } = await supabase
             .from('users')
-            .select('id, email, name, document, password, role')
+            .select('id, email, name, document, password, role, image')
             .eq('document', normalizedDocument)
             .single();
 
@@ -46,7 +46,7 @@ export const authOptions: AuthOptions = {
               name: userData.name,
               role: userData.role,
               document: userData.document,
-              image: userData.image
+              image: userData.image || null // Añadir null como fallback
             };
           }
           
@@ -67,7 +67,7 @@ export const authOptions: AuthOptions = {
               name: userData.name,
               role: userData.role,
               document: userData.document,
-              image: userData.image
+              image: userData.image || null // Añadir null como fallback
             };
           } catch {
             return null;
@@ -94,7 +94,7 @@ export const authOptions: AuthOptions = {
         token.name = user.name;
         token.role = user.role;
         token.document = user.document;
-        token.image = user.image;
+        token.image = user.image || null; // Añadir null como fallback
       }
       return token;
     },
@@ -103,9 +103,10 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.document = token.document as string;
+        session.user.image = token.image as string || null; // Añadir image al session
       }
       return session;
     }
   },
-  debug: process.env.NODE_ENV === 'development'
+  debug: false // Desactivar modo debug en producción
 }
