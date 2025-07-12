@@ -288,6 +288,8 @@ export function SalesTable({ userId }: { userId: string }) {
   const emptyRows = rowsPerPage - Math.min(rowsPerPage, sales.length - page * rowsPerPage);
   const visibleSales = sales.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+  const MotionTableRow = motion(TableRow);
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -625,13 +627,12 @@ export function SalesTable({ userId }: { userId: string }) {
                 <TableBody>
                   <AnimatePresence>
                     {visibleSales.map((sale, index) => (
-                      <motion.tr
+                      <MotionTableRow
                         key={sale.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
-                        component={TableRow}
                         sx={{
                           bgcolor: sale.payment_type !== 'contado' && sale.payment_status === 'pendiente'
                             ? theme.palette.mode === 'dark'
@@ -651,17 +652,17 @@ export function SalesTable({ userId }: { userId: string }) {
                         <TableCell>
                           <Typography variant="body2">
                             {format(
-                              // Esto ajustará la fecha UTC a la zona horaria local
-                              new Date(sale.created_at),
+                              // Ajustar la fecha manualmente para Colombia (GMT-5)
+                              new Date(new Date(sale.created_at).getTime() - 5 * 60 * 60 * 1000),
                               'dd/MM/yyyy',
-                              { locale: es, timeZone: 'America/Bogota' }
+                              { locale: es }
                             )}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {format(
-                              new Date(sale.created_at),
+                              new Date(new Date(sale.created_at).getTime() - 5 * 60 * 60 * 1000),
                               'HH:mm',
-                              { locale: es, timeZone: 'America/Bogota' }
+                              { locale: es }
                             )}
                           </Typography>
                         </TableCell>
@@ -786,7 +787,7 @@ export function SalesTable({ userId }: { userId: string }) {
                             </Tooltip>
                           </Box>
                         </TableCell>
-                      </motion.tr>
+                      </MotionTableRow>
                     ))}
                   </AnimatePresence>
                 </TableBody>
@@ -876,7 +877,7 @@ export function SalesTable({ userId }: { userId: string }) {
                         {format(
                           new Date(selectedSale.created_at),
                           'dd MMMM yyyy',
-                          { locale: es, timeZone: 'America/Bogota' }
+                          { locale: es }
                         )}
                       </Typography>
                     </Grid>
