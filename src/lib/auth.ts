@@ -3,7 +3,17 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { supabase } from './supabase';
 import { createClient } from '@supabase/supabase-js';
 
-// Cliente para operaciones administrativas (aunque actualmente no se usa)
+// Definición de la interfaz de usuario para mejorar el tipado
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  document: string;
+  role: string;
+  image?: string | null;
+}
+
+// Cliente para operaciones administrativas
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_KEY || ''
@@ -26,7 +36,7 @@ export const authOptions: AuthOptions = {
           // Trim y normalización del documento
           const normalizedDocument = credentials.document.trim();
           
-          // Buscar el usuario por documento - MODIFICAR AQUÍ PARA INCLUIR IMAGE
+          // Buscar el usuario por documento
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('id, email, name, document, password, role, image')
@@ -46,7 +56,7 @@ export const authOptions: AuthOptions = {
               name: userData.name,
               role: userData.role,
               document: userData.document,
-              image: userData.image || null // Añadir null como fallback
+              image: userData.image || null
             };
           }
           
@@ -67,7 +77,7 @@ export const authOptions: AuthOptions = {
               name: userData.name,
               role: userData.role,
               document: userData.document,
-              image: userData.image || null // Añadir null como fallback
+              image: userData.image || null
             };
           } catch {
             return null;
@@ -92,9 +102,9 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.role = user.role;
-        token.document = user.document;
-        token.image = user.image || null; // Añadir null como fallback
+        token.role = (user as any).role;
+        token.document = (user as any).document;
+        token.image = user.image || null;
       }
       return token;
     },
@@ -103,10 +113,10 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.document = token.document as string;
-        session.user.image = token.image as string || null; // Añadir image al session
+        // La propiedad image ya existe en session.user
       }
       return session;
     }
   },
-  debug: false // Desactivar modo debug en producción
-}
+  debug: process.env.NODE_ENV === 'development'
+};
